@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../Modules/Identity/Identity/Couture.Identity.csproj" />
+    <ProjectReference Include="../Modules/Orders/Orders/Couture.Orders.csproj" />
+    <ProjectReference Include="../Modules/Clients/Clients/Couture.Clients.csproj" />
+    <ProjectReference Include="../Modules/Finance/Finance/Couture.Finance.csproj" />
+    <ProjectReference Include="../Modules/Dashboard/Dashboard/Couture.Dashboard.csproj" />
+    <ProjectReference Include="../Modules/Notifications/Notifications/Couture.Notifications.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
+    <PackageReference Include="Mediator.Abstractions" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+</Project>

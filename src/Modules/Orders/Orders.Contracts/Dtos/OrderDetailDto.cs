@@ -1,0 +1,48 @@
+namespace Couture.Orders.Contracts.Dtos;
+
+public sealed record OrderDetailDto(
+    Guid Id,
+    string Code,
+    Guid ClientId,
+    string? ClientName,
+    string Status,
+    string StatusLabel,
+    string StatusColor,
+    string WorkType,
+    string WorkTypeLabel,
+    string? Description,
+    string? Fabric,
+    string? TechnicalNotes,
+    string? EmbroideryStyle,
+    string? ThreadColors,
+    string? Density,
+    string? EmbroideryZone,
+    string? BeadType,
+    string? Arrangement,
+    string? AffectedZones,
+    DateOnly ReceptionDate,
+    DateOnly ExpectedDeliveryDate,
+    DateOnly? ActualDeliveryDate,
+    decimal TotalPrice,
+    decimal OutstandingBalance,
+    int DelayDays,
+    bool IsLate,
+    Guid? AssignedTailorId,
+    Guid? AssignedEmbroidererId,
+    Guid? AssignedBeaderId,
+    bool HasUnpaidBalance,
+    List<TimelineEntryDto> Timeline,
+    List<PhotoDto> Photos,
+    DateTimeOffset CreatedAt);
+
+public sealed record TimelineEntryDto(
+    string? FromStatus,
+    string ToStatus,
+    string ToStatusLabel,
+    string ToStatusColor,
+    string? Reason,
+    string TransitionedBy,
+    DateTimeOffset TransitionedAt,
+    TimeSpan? Duration);
+
+public sealed record PhotoDto(Guid Id, string FileName, string StoragePath, DateTimeOffset UploadedAt);
