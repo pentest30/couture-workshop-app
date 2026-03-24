@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Notifications.Contracts/Couture.Notifications.Contracts.csproj" />
+    <ProjectReference Include="../../Orders/Orders.Contracts/Couture.Orders.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Ardalis.SmartEnum" />
+    <PackageReference Include="Ardalis.SmartEnum.EFCore" />
+
+  </ItemGroup>
+</Project>

@@ -1,0 +1,24 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- EF Core -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0-preview.3.25171.6" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-preview.3" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0-preview.3.25171.6" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0-preview.3.25171.6" />
+    <!-- SmartEnum -->
+    <PackageVersion Include="Ardalis.SmartEnum" Version="8.1.0" />
+    <PackageVersion Include="Ardalis.SmartEnum.EFCore" Version="8.1.0" />
+    <!-- Validation -->
+    <PackageVersion Include="FluentValidation" Version="12.0.0" />
+    <!-- Mediator -->
+    <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
+    <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
+    <!-- PDF -->
+    <PackageVersion Include="QuestPDF" Version="2025.4.0" />
+    <!-- Excel -->
+    <PackageVersion Include="ClosedXML" Version="0.104.2" />
+  </ItemGroup>
+</Project>
