@@ -20,5 +20,10 @@
     <PackageVersion Include="QuestPDF" Version="2025.4.0" />
     <!-- Excel -->
     <PackageVersion Include="ClosedXML" Version="0.104.2" />
+    <!-- Identity + Auth -->
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0-preview.3.25172.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0-preview.3.25172.1" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.7.0" />
   </ItemGroup>
 </Project>
