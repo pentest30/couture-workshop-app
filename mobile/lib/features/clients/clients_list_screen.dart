@@ -164,7 +164,10 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
         ]),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showNewClientSheet,
+        onPressed: () async {
+          await context.push('/clients/new');
+          _loadClients(); // Reload after returning
+        },
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.person_add_outlined),
