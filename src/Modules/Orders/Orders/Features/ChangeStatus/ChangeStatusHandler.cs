@@ -1,3 +1,4 @@
+using Couture.Orders.Contracts;
 using Couture.Orders.Domain;
 using Couture.Orders.Persistence;
 using Mediator;
@@ -13,9 +14,10 @@ public sealed class ChangeStatusHandler : ICommandHandler<ChangeStatusCommand, C
 
     public async ValueTask<ChangeStatusResult> Handle(ChangeStatusCommand command, CancellationToken ct)
     {
+        var id = OrderId.From(command.OrderId);
         var order = await _db.Orders
             .Include(o => o.Transitions)
-            .FirstOrDefaultAsync(o => o.Id.Value == command.OrderId, ct)
+            .FirstOrDefaultAsync(o => o.Id == id, ct)
             ?? throw new InvalidOperationException("Order not found.");
 
         var newStatus = OrderStatus.FromName(command.NewStatus, ignoreCase: true);

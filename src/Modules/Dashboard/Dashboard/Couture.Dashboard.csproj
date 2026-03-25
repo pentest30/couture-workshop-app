@@ -1,12 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="../Dashboard.Contracts/Couture.Dashboard.Contracts.csproj" />
+    <ProjectReference Include="../../Orders/Orders/Couture.Orders.csproj" />
+    <ProjectReference Include="../../Finance/Finance/Couture.Finance.csproj" />
+    <ProjectReference Include="../../Identity/Identity/Couture.Identity.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="ClosedXML" />
     <PackageReference Include="QuestPDF" />
+    <PackageReference Include="Mediator.Abstractions" />
   </ItemGroup>
 </Project>

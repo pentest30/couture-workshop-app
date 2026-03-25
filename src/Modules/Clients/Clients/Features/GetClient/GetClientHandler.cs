@@ -1,3 +1,4 @@
+using Couture.Clients.Contracts;
 using Couture.Clients.Contracts.Dtos;
 using Couture.Clients.Persistence;
 using Mediator;
@@ -13,9 +14,10 @@ public sealed class GetClientHandler : IQueryHandler<GetClientQuery, ClientDetai
 
     public async ValueTask<ClientDetailDto?> Handle(GetClientQuery query, CancellationToken ct)
     {
+        var id = ClientId.From(query.ClientId);
         var client = await _db.Clients
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id.Value == query.ClientId, ct);
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
 
         if (client is null) return null;
 

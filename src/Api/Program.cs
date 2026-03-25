@@ -63,6 +63,8 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapOrderEndpoints();
 app.MapClientEndpoints();
+app.MapFinanceEndpoints();
+app.MapDashboardEndpoints();
 
 // Auto-migrate and seed in development
 if (app.Environment.IsDevelopment())

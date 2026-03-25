@@ -2,6 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="../Finance.Contracts/Couture.Finance.Contracts.csproj" />
     <ProjectReference Include="../../Orders/Orders.Contracts/Couture.Orders.Contracts.csproj" />
+    <ProjectReference Include="../../Orders/Orders/Couture.Orders.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
@@ -10,5 +11,6 @@
     <PackageReference Include="Ardalis.SmartEnum.EFCore" />
 
     <PackageReference Include="QuestPDF" />
+    <PackageReference Include="Mediator.Abstractions" />
   </ItemGroup>
 </Project>

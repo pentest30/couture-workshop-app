@@ -1,3 +1,4 @@
+using Couture.Orders.Contracts;
 using Couture.Orders.Contracts.Dtos;
 using Couture.Orders.Persistence;
 using Mediator;
@@ -13,11 +14,12 @@ public sealed class GetOrderHandler : IQueryHandler<GetOrderQuery, OrderDetailDt
 
     public async ValueTask<OrderDetailDto?> Handle(GetOrderQuery query, CancellationToken ct)
     {
+        var id = OrderId.From(query.OrderId);
         var order = await _db.Orders
             .Include(o => o.Transitions)
             .Include(o => o.Photos)
             .AsNoTracking()
-            .FirstOrDefaultAsync(o => o.Id.Value == query.OrderId, ct);
+            .FirstOrDefaultAsync(o => o.Id == id, ct);
 
         if (order is null) return null;
 
