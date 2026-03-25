@@ -7,6 +7,7 @@ import '../../core/widgets/status_badge.dart';
 import '../../core/widgets/work_type_badge.dart';
 import '../../core/widgets/gold_divider.dart';
 import 'change_status_sheet.dart';
+import 'record_payment_sheet.dart';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -160,26 +161,56 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               ]),
             ),
 
-            // Payments list
-            if (_payments.isNotEmpty) ...[
+            // Payments section (F08)
+            if (balance > 0) ...[
               const SizedBox(height: 16),
-              Text('Paiements', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: AppColors.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              ..._payments.map((p) {
-                final payment = p as Map<String, dynamic>;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(children: [
-                    Icon(Icons.payment, size: 14, color: AppColors.statusPrete),
-                    const SizedBox(width: 8),
-                    Text('${payment['amount']} DZD', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
-                    const Spacer(),
-                    Text(_formatDate(payment['paidAt'] ?? payment['createdAt']), style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
-                  ]),
-                );
-              }),
+              SizedBox(
+                width: double.infinity, height: 44,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await showModalBottomSheet(
+                      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+                      builder: (_) => RecordPaymentSheet(
+                        orderId: widget.orderId,
+                        orderCode: o['code'] ?? '',
+                        outstandingBalance: balance,
+                        api: ref.read(apiClientProvider),
+                      ),
+                    );
+                    if (result != null) _loadData();
+                  },
+                  icon: const Icon(Icons.payments_outlined, size: 18),
+                  label: Text('ENCAISSER', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white, shape: const StadiumBorder()),
+                ),
+              ),
             ],
-            const SizedBox(height: 24),
+
+            // Payment history
+            if (_payments.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text('Paiements', style: GoogleFonts.notoSerif(fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              ..._payments.map((p) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(10)),
+                child: Row(children: [
+                  Icon(Icons.receipt_long, color: AppColors.statusPrete, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('${((p as Map)['amount'] as num?)?.toStringAsFixed(0) ?? '0'} DZD — ${p['paymentMethodLabel'] ?? p['paymentMethod'] ?? ''}',
+                      style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600)),
+                    if (p['receiptCode'] != null)
+                      Text('Reçu: ${p['receiptCode']}', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.secondary)),
+                    if (p['note'] != null && p['note'].toString().isNotEmpty)
+                      Text(p['note'].toString(), style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                  ])),
+                  Text(p['paymentDate'] ?? '', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                ]),
+              )),
+            ],
+            const SizedBox(height: 20),
 
             // Timeline
             Text('Historique', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
