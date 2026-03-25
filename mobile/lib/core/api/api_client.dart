@@ -69,12 +69,13 @@ class ApiClient {
   }
 
   // Orders
-  Future<Map<String, dynamic>> getOrders({int page = 1, String? status, String? search, bool? lateOnly, String? workType}) async {
+  Future<Map<String, dynamic>> getOrders({int page = 1, String? status, String? search, bool? lateOnly, String? workType, String? clientId}) async {
     final params = <String, dynamic>{'page': page, 'pageSize': 20};
     if (status != null) params['status'] = status;
     if (search != null) params['search'] = search;
     if (lateOnly == true) params['lateOnly'] = true;
     if (workType != null) params['workType'] = workType;
+    if (clientId != null) params['clientId'] = clientId;
     final response = await dio.get('/api/orders', queryParameters: params);
     return _handleResponse(response) as Map<String, dynamic>;
   }

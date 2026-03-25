@@ -55,10 +55,11 @@ public static class OrderEndpoints
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string sortBy = "createdAt",
-        [FromQuery] string sortDir = "desc")
+        [FromQuery] string sortDir = "desc",
+        [FromQuery] Guid? clientId = null)
     {
         var viewOwnOnly = !currentUser.HasPermission(CouturePermissions.OrdersView) && currentUser.HasPermission(CouturePermissions.OrdersViewOwn);
-        var query = new ListOrdersQuery(search, status, workType, artisanId, dateFrom, dateTo, lateOnly, page, pageSize, sortBy, sortDir, currentUser.UserId, viewOwnOnly);
+        var query = new ListOrdersQuery(search, status, workType, artisanId, dateFrom, dateTo, lateOnly, page, pageSize, sortBy, sortDir, clientId, currentUser.UserId, viewOwnOnly);
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

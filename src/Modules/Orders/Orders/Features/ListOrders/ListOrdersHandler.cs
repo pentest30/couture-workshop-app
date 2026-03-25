@@ -28,6 +28,9 @@ public sealed class ListOrdersHandler : IQueryHandler<ListOrdersQuery, PagedResu
             q = q.Where(o => o.Code.ToLower().Contains(search));
         }
 
+        if (query.ClientId.HasValue)
+            q = q.Where(o => o.ClientId == query.ClientId.Value);
+
         if (!string.IsNullOrWhiteSpace(query.Status) && OrderStatus.TryFromName(query.Status, true, out var status))
             q = q.Where(o => o.Status == status);
 

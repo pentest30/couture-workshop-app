@@ -15,5 +15,6 @@ public sealed record ListOrdersQuery(
     int PageSize = 20,
     string SortBy = "createdAt",
     string SortDir = "desc",
+    Guid? ClientId = null,
     Guid? CurrentUserId = null,
     bool ViewOwnOnly = false) : IQuery<PagedResultDto<OrderSummaryDto>>;
