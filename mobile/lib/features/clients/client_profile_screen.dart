@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/providers.dart';
 import '../../core/widgets/gold_divider.dart';
+import '../../core/widgets/status_badge.dart';
 import 'measurements_screen.dart';
 
 class ClientProfileScreen extends ConsumerStatefulWidget {
@@ -16,6 +17,7 @@ class ClientProfileScreen extends ConsumerStatefulWidget {
 
 class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
   Map<String, dynamic>? _client;
+  List<dynamic> _orders = [];
   bool _loading = true;
   String? _error;
 
@@ -30,6 +32,12 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
     try {
       final data = await ref.read(apiClientProvider).getClient(widget.clientId);
       if (mounted) setState(() { _client = data; _loading = false; });
+
+      // Load client orders
+      try {
+        final ordersData = await ref.read(apiClientProvider).getOrders(search: _client!['code']);
+        _orders = (ordersData['items'] as List?) ?? [];
+      } catch (_) {}
     } catch (e) {
       if (mounted) setState(() { _loading = false; _error = 'Impossible de charger le client: $e'; });
     }
@@ -131,21 +139,67 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
             const GoldDivider(),
             const SizedBox(height: 24),
 
-            // Order history
-            Text('Historique Commandes', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
+            // Order history with balance
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('Historique Commandes (${_orders.length})', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
+              if (_orders.isNotEmpty)
+                TextButton(onPressed: () => context.go('/orders'), child: Text('VOIR TOUT', style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1, color: AppColors.secondary))),
+            ]),
             const SizedBox(height: 12),
-            if ((c['recentOrders'] as List<dynamic>?)?.isNotEmpty == true)
-              ...((c['recentOrders'] as List<dynamic>).map((o) => _orderTile(o)))
-            else
+            if (_orders.isEmpty)
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
                 child: Column(children: [
-                  const Icon(Icons.inbox_outlined, size: 32, color: AppColors.onSurfaceVariant),
+                  Icon(Icons.receipt_long_outlined, size: 36, color: AppColors.onSurfaceVariant.withAlpha(80)),
                   const SizedBox(height: 8),
-                  Text('Aucune commande pour l\'instant', style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant)),
+                  Text('Aucune commande', style: GoogleFonts.manrope(color: AppColors.onSurfaceVariant)),
                 ]),
-              ),
+              )
+            else
+              ..._orders.take(10).map((o) {
+                final isLate = o['isLate'] == true;
+                final balance = ((o['outstandingBalance'] as num?) ?? 0).toDouble();
+                return GestureDetector(
+                  onTap: () => context.go('/orders/${o['id']}'),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: isLate ? Border.all(color: AppColors.error.withAlpha(40)) : null,
+                    ),
+                    child: Row(children: [
+                      Container(
+                        width: 4, height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.statusColor(o['status'] ?? ''),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [
+                          Text(o['code'] ?? '', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
+                          const SizedBox(width: 8),
+                          StatusBadge(status: o['status'] ?? '', label: o['statusLabel'] ?? ''),
+                        ]),
+                        const SizedBox(height: 2),
+                        Text('${((o['totalPrice'] as num?) ?? 0).toStringAsFixed(0)} DZD', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                      ])),
+                      Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                        if (balance > 0)
+                          Text('${balance.toStringAsFixed(0)} DZD', style: GoogleFonts.notoSerif(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.secondary))
+                        else
+                          Text('Soldé', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.statusPrete)),
+                        if (isLate)
+                          Text('${o['delayDays']}j retard', style: GoogleFonts.manrope(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.w600)),
+                      ]),
+                    ]),
+                  ),
+                );
+              }),
           ],
         ),
       ),

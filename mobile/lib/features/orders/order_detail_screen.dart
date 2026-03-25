@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:flutter/services.dart';
+import '../../core/api/api_client.dart';
 import '../../core/providers/providers.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../core/widgets/work_type_badge.dart';
@@ -202,7 +204,16 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                     Text('${((p as Map)['amount'] as num?)?.toStringAsFixed(0) ?? '0'} DZD — ${p['paymentMethodLabel'] ?? p['paymentMethod'] ?? ''}',
                       style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600)),
                     if (p['receiptCode'] != null)
-                      Text('Reçu: ${p['receiptCode']}', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.secondary)),
+                      GestureDetector(
+                        onTap: () {
+                          final url = '${ApiClient.baseUrl}/api/finance/receipts/${p['id']}/pdf';
+                          Clipboard.setData(ClipboardData(text: url));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Lien reçu copié: $url'), action: SnackBarAction(label: 'OK', onPressed: () {})),
+                          );
+                        },
+                        child: Text('📄 Reçu: ${p['receiptCode']}', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.secondary)),
+                      ),
                     if (p['note'] != null && p['note'].toString().isNotEmpty)
                       Text(p['note'].toString(), style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
                   ])),

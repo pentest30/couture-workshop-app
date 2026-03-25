@@ -163,15 +163,14 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
           ),
         ]),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await context.push('/clients/new');
-          _loadClients(); // Reload after returning
+          _loadClients();
         },
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.person_add_outlined),
-        label: Text('NOUVELLE', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+        child: const Icon(Icons.add, size: 28),
       ),
     );
   }
