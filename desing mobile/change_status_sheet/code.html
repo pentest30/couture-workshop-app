@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#281900",
+              "surface-container": "#f0ede9",
+              "on-error": "#ffffff",
+              "on-error-container": "#93000a",
+              "primary": "#410050",
+              "on-surface-variant": "#4e434e",
+              "inverse-primary": "#f5adff",
+              "surface-container-high": "#ebe8e3",
+              "tertiary": "#3e0057",
+              "surface": "#fcf9f4",
+              "surface-variant": "#e5e2dd",
+              "inverse-on-surface": "#f3f0eb",
+              "inverse-surface": "#31302d",
+              "secondary-container": "#ffc565",
+              "on-tertiary-container": "#d283f1",
+              "background": "#fcf9f4",
+              "error-container": "#ffdad6",
+              "on-secondary": "#ffffff",
+              "on-secondary-container": "#765100",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f6f3ee",
+              "outline": "#80737f",
+              "on-secondary-fixed-variant": "#604100",
+              "on-primary": "#ffffff",
+              "error": "#ba1a1a",
+              "tertiary-fixed-dim": "#ecb2ff",
+              "tertiary-container": "#5d0d7d",
+              "surface-bright": "#fcf9f4",
+              "tertiary-fixed": "#f8d8ff",
+              "on-primary-fixed": "#350041",
+              "outline-variant": "#d2c2cf",
+              "on-tertiary": "#ffffff",
+              "primary-fixed": "#fed6ff",
+              "secondary-fixed-dim": "#f6bd5e",
+              "on-primary-container": "#d287de",
+              "secondary-fixed": "#ffdead",
+              "surface-dim": "#dcdad5",
+              "surface-tint": "#864394",
+              "on-tertiary-fixed": "#320047",
+              "primary-fixed-dim": "#f5adff",
+              "on-tertiary-fixed-variant": "#6c228c",
+              "on-background": "#1c1c19",
+              "secondary": "#7f5700",
+              "primary-container": "#5c1a6b",
+              "on-primary-fixed-variant": "#6c2a7a",
+              "surface-container-highest": "#e5e2dd",
+              "on-surface": "#1c1c19"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scrim-blur {
+            backdrop-filter: blur(8px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body antialiased flex justify-center items-center min-h-screen">
+<!-- Mobile Device Container (iPhone 14 Pro 393x852) -->
+<div class="relative w-[393px] h-[852px] bg-white overflow-hidden shadow-2xl rounded-[3rem] border-[8px] border-on-surface">
+<!-- Background: Dimmed Order Detail Screen -->
+<div class="absolute inset-0 z-0 bg-background overflow-y-auto">
+<!-- Mock Top Bar -->
+<header class="flex justify-between items-center px-6 py-4 bg-gradient-to-br from-[#410050] to-[#5C1A6B] text-white">
+<span class="material-symbols-outlined">arrow_back</span>
+<h1 class="font-headline italic text-lg">Commande #742</h1>
+<span class="material-symbols-outlined">more_vert</span>
+</header>
+<!-- Mock Content -->
+<div class="p-6 space-y-6 opacity-40">
+<div class="aspect-[4/5] rounded-xl overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Close-up of a luxurious deep purple caftan with intricate gold embroidery and silk textures in a high-fashion atelier setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQ16K-6kFmxQelz40eLMHajL3ZMOL_4F2RggC_7GHKrAONtBvdzwlflbpe8WHLxQunVXDHLTKA_hK6PLR5iaqpQ6hBVKj9VlNjo0Nd7nRu12St9SCq_rEzrLiu5zO-1KJDh1kesFTfU6Kcxn53h3oYADZeuCuxRmoqRTT1_MQTo7gnoZWEReFnDnZ6oQQFlLXmcKiOpAKFBO9v4H7rhBMsHztK60NO41F_XdRdntn28XCU5J-YD_waJxRJ-JSpE-jd4fcXIY4aieY"/>
+</div>
+<div class="space-y-2">
+<p class="font-label text-xs uppercase tracking-widest text-secondary">Clientèle Privée</p>
+<h2 class="font-headline text-2xl font-bold">Karakou d'Alger en Velours</h2>
+<p class="text-on-surface-variant leading-relaxed">Travail de broderie main en fil d'or 18 carats. Doublure en soie sauvage.</p>
+</div>
+<div class="h-24 bg-surface-container rounded-lg border border-outline-variant/20"></div>
+</div>
+<!-- Scrim Overlay -->
+<div class="absolute inset-0 bg-primary/30 scrim-blur z-10"></div>
+</div>
+<!-- Bottom Sheet Trigger/Handle (Visual only) -->
+<div class="absolute bottom-0 w-full z-20 flex flex-col justify-end h-full">
+<!-- The Bottom Sheet -->
+<div class="bg-surface-container-lowest rounded-t-[2.5rem] shadow-[0_-12px_40px_rgba(65,0,80,0.12)] px-6 pt-3 pb-10 flex flex-col items-center">
+<!-- Handle Bar -->
+<div class="w-12 h-1.5 bg-outline-variant/40 rounded-full mb-6"></div>
+<div class="w-full mb-8">
+<h2 class="font-headline text-2xl text-primary font-bold mb-2">Changer le Statut</h2>
+<div class="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-full w-fit border border-primary/10">
+<span class="text-sm">Actuellement :</span>
+<span class="flex items-center gap-1 font-bold text-primary text-sm uppercase tracking-wide">
+<span class="material-symbols-outlined text-base">architecture</span> 
+                            En Broderie
+                        </span>
+</div>
+</div>
+<!-- Action Cards Stack -->
+<div class="w-full space-y-4">
+<!-- Perlage -->
+<button class="w-full group relative overflow-hidden bg-tertiary-fixed text-on-tertiary-fixed p-5 rounded-xl flex items-center justify-between transition-all active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-white/40 flex items-center justify-center text-2xl">💎</div>
+<div class="text-left">
+<span class="font-label block text-[10px] uppercase tracking-tighter opacity-70">Prochaine étape</span>
+<span class="font-headline font-bold text-lg">Passer en Perlage</span>
+</div>
+</div>
+<span class="material-symbols-outlined opacity-40 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<!-- Retouche (Active State with expanded field) -->
+<div class="w-full bg-error-container/40 border border-error/10 p-5 rounded-xl space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4 text-on-error-container">
+<div class="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center text-2xl">✂️</div>
+<div class="text-left">
+<span class="font-headline font-bold text-lg">Signaler Retouche</span>
+</div>
+</div>
+</div>
+<!-- Expandable Text Field -->
+<div class="space-y-2">
+<label class="font-label text-[10px] uppercase tracking-widest text-on-error-container/70 ml-1">Motif de retouche (obligatoire)</label>
+<textarea class="w-full bg-white/60 border-none rounded-lg p-3 text-sm placeholder:italic focus:ring-1 focus:ring-error" placeholder="Ex: Ajustement de l'encolure nécessaire..." rows="3"></textarea>
+</div>
+<button class="w-full bg-error text-white py-3 rounded-full font-bold text-sm uppercase tracking-widest shadow-md">
+                            Confirmer Retouche
+                        </button>
+</div>
+<!-- Marquer Prête -->
+<button class="w-full group bg-surface-container-high text-[#1B3012] p-5 rounded-xl flex items-center justify-between transition-all active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-[#E8F5E9] flex items-center justify-center text-2xl">✅</div>
+<div class="text-left">
+<span class="font-headline font-bold text-lg">Marquer Prête</span>
+</div>
+</div>
+<span class="material-symbols-outlined opacity-40 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+</div>
+<!-- Cancel Button -->
+<button class="mt-8 font-label text-xs font-bold uppercase tracking-[0.2em] text-outline hover:text-primary transition-colors py-2">
+                    Annuler
+                </button>
+</div>
+</div>
+<!-- Dynamic Island Area -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-8 bg-black rounded-b-3xl z-50"></div>
+</div>
+</body></html>

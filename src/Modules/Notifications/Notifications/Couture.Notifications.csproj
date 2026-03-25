@@ -1,13 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Notifications.Contracts/Couture.Notifications.Contracts.csproj" />
-    <ProjectReference Include="../../Orders/Orders.Contracts/Couture.Orders.Contracts.csproj" />
+    <ProjectReference Include="../../Orders/Orders/Couture.Orders.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Ardalis.SmartEnum" />
     <PackageReference Include="Ardalis.SmartEnum.EFCore" />
-
+    <PackageReference Include="Mediator.Abstractions" />
+    <PackageReference Include="Hangfire.Core" />
   </ItemGroup>
 </Project>

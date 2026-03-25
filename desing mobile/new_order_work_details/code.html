@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#281900",
+              "surface-container": "#f0ede9",
+              "on-error": "#ffffff",
+              "on-error-container": "#93000a",
+              "primary": "#410050",
+              "on-surface-variant": "#4e434e",
+              "inverse-primary": "#f5adff",
+              "surface-container-high": "#ebe8e3",
+              "tertiary": "#3e0057",
+              "surface": "#fcf9f4",
+              "surface-variant": "#e5e2dd",
+              "inverse-on-surface": "#f3f0eb",
+              "inverse-surface": "#31302d",
+              "secondary-container": "#ffc565",
+              "on-tertiary-container": "#d283f1",
+              "background": "#fcf9f4",
+              "error-container": "#ffdad6",
+              "on-secondary": "#ffffff",
+              "on-secondary-container": "#765100",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f6f3ee",
+              "outline": "#80737f",
+              "on-secondary-fixed-variant": "#604100",
+              "on-primary": "#ffffff",
+              "error": "#ba1a1a",
+              "tertiary-fixed-dim": "#ecb2ff",
+              "tertiary-container": "#5d0d7d",
+              "surface-bright": "#fcf9f4",
+              "tertiary-fixed": "#f8d8ff",
+              "on-primary-fixed": "#350041",
+              "outline-variant": "#d2c2cf",
+              "on-tertiary": "#ffffff",
+              "primary-fixed": "#fed6ff",
+              "secondary-fixed-dim": "#f6bd5e",
+              "on-primary-container": "#d287de",
+              "secondary-fixed": "#ffdead",
+              "surface-dim": "#dcdad5",
+              "surface-tint": "#864394",
+              "on-tertiary-fixed": "#320047",
+              "primary-fixed-dim": "#f5adff",
+              "on-tertiary-fixed-variant": "#6c228c",
+              "on-background": "#1c1c19",
+              "secondary": "#7f5700",
+              "primary-container": "#5c1a6b",
+              "on-primary-fixed-variant": "#6c2a7a",
+              "surface-container-highest": "#e5e2dd",
+              "on-surface": "#1c1c19"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.25rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-nav {
+        background: rgba(252, 249, 244, 0.8);
+        backdrop-filter: blur(12px);
+      }
+      .stitch-line {
+        background-image: linear-gradient(to right, #7f5700 33%, rgba(255,255,255,0) 0%);
+        background-position: bottom;
+        background-size: 8px 1px;
+        background-repeat: repeat-x;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-[852px] max-w-[393px] mx-auto overflow-x-hidden relative shadow-2xl">
+<!-- Top Navigation Bar -->
+<nav class="bg-gradient-to-br from-[#410050] to-[#5C1A6B] text-white flex justify-between items-center w-full px-6 py-4 z-50 sticky top-0 shadow-sm">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-white">menu</span>
+<span class="font-['Noto_Serif'] text-xl italic text-white">L'Atelier Couture</span>
+</div>
+<span class="material-symbols-outlined text-white">more_vert</span>
+</nav>
+<!-- Progress & Header Section -->
+<header class="px-6 pt-8 pb-4">
+<div class="flex justify-between items-end mb-4">
+<div>
+<span class="font-label text-[10px] uppercase tracking-[0.2em] text-secondary font-bold">Nouvelle Commande</span>
+<h1 class="font-headline text-3xl font-bold text-primary mt-1">Détails du Travail</h1>
+</div>
+<span class="font-headline italic text-primary/60 text-lg">2 / 3</span>
+</div>
+<!-- Gold Progress Bar -->
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary-fixed-dim w-[66%] shadow-[0_0_8px_rgba(246,189,94,0.4)]"></div>
+</div>
+</header>
+<main class="px-6 pb-32">
+<!-- Work Type Selection -->
+<section class="mt-6">
+<h2 class="font-label text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-4">Type de confection</h2>
+<div class="grid grid-cols-2 gap-4">
+<!-- Simple -->
+<div class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-surface-bright transition-all active:scale-95">
+<span class="material-symbols-outlined text-primary text-3xl">syringe</span>
+<span class="font-body text-sm font-semibold">Simple</span>
+</div>
+<!-- Brodé (Selected) -->
+<div class="bg-surface-container-lowest border-2 border-primary rounded-xl p-4 flex flex-col items-center justify-center gap-2 shadow-[0_0_15px_rgba(65,0,80,0.15)] relative overflow-hidden">
+<div class="absolute top-0 right-0 p-1">
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<span class="material-symbols-outlined text-primary text-3xl">architecture</span>
+<span class="font-body text-sm font-bold text-primary">Brodé</span>
+</div>
+<!-- Perlé -->
+<div class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-surface-bright transition-all active:scale-95">
+<span class="material-symbols-outlined text-primary text-3xl">diamond</span>
+<span class="font-body text-sm font-semibold text-on-surface">Perlé</span>
+</div>
+<!-- Mixte -->
+<div class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-surface-bright transition-all active:scale-95">
+<span class="material-symbols-outlined text-primary text-3xl">auto_awesome</span>
+<span class="font-body text-sm font-semibold text-on-surface">Mixte</span>
+</div>
+</div>
+</section>
+<!-- Conditional Section: Brodé -->
+<section class="mt-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+<!-- Embroidery Style -->
+<div class="space-y-2">
+<label class="font-label text-[10px] uppercase tracking-widest text-secondary font-bold">Style de broderie</label>
+<input class="w-full bg-surface-container-low border-b-2 border-primary/20 focus:border-primary outline-none py-3 px-4 font-body text-on-surface rounded-t-lg transition-colors" placeholder="Ex: Motifs floraux" type="text" value="Motifs floraux traditionnels"/>
+</div>
+<!-- Thread Color Chips -->
+<div class="space-y-3">
+<label class="font-label text-[10px] uppercase tracking-widest text-secondary font-bold">Palette de fils</label>
+<div class="flex flex-wrap gap-3">
+<div class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-[#410050] ring-2 ring-primary transition-transform hover:scale-110"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-[#7F5700] transition-transform hover:scale-110"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-[#D2C2CF] transition-transform hover:scale-110"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-[#E5B6F0] transition-transform hover:scale-110"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-[#B48400] transition-transform hover:scale-110"></div>
+<button class="w-10 h-10 rounded-full border-2 border-dashed border-outline-variant flex items-center justify-center text-outline transition-colors hover:border-primary hover:text-primary">
+<span class="material-symbols-outlined text-lg">add</span>
+</button>
+</div>
+</div>
+<!-- Special Instructions -->
+<div class="space-y-2">
+<label class="font-label text-[10px] uppercase tracking-widest text-secondary font-bold">Instructions spéciales</label>
+<textarea class="w-full bg-surface-container-low border-b-2 border-primary/20 focus:border-primary outline-none py-3 px-4 font-body text-on-surface rounded-t-lg transition-colors resize-none" placeholder="Précisez les zones à broder, les perles spécifiques..." rows="3"></textarea>
+</div>
+<!-- Photo Upload Area -->
+<div class="space-y-3">
+<label class="font-label text-[10px] uppercase tracking-widest text-secondary font-bold">Photos de référence</label>
+<div class="flex gap-3">
+<div class="w-24 h-24 rounded-xl overflow-hidden border border-outline-variant/30 flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="close-up of intricate gold embroidery on deep purple silk fabric with professional studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbY6wJx9rVL_zYUpEf3H48_O1K14gZrIPTskeh8_RmCzGomLV9AeDExFQjQBzxT1ZwtiGhZwN8Hmqx7WYkwMEJ7uoeuTUbdmTn13h1qIvh0NFAN16vau-v3gK87QwX1Rml5EOLYn6P8HwH2hku8pLIgcfWRyLnBhUrTP3ZwlW7yLKc_yQ2zXZbVngStdSAqQtrA1vFWKEth3_v6UrDkp7O2kfkfKjJY4f4AeImxBajGoB0VBepZRFy0BTtYE-gXyHh25Zfpeqyl9E"/>
+</div>
+<button class="w-24 h-24 rounded-xl border-2 border-dashed border-outline-variant/40 flex flex-col items-center justify-center gap-1 text-outline hover:border-secondary hover:text-secondary transition-all bg-surface-container-low/30">
+<span class="material-symbols-outlined text-2xl">add_a_photo</span>
+<span class="text-[9px] font-bold uppercase tracking-tighter">Ajouter</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Action Bar -->
+<footer class="fixed bottom-0 left-0 w-full max-w-[393px] mx-auto glass-nav px-6 pt-4 pb-8 flex justify-between items-center gap-4 z-50">
+<button class="flex-1 py-4 px-6 rounded-full border-2 border-secondary text-secondary font-bold font-label text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+            Précédent
+        </button>
+<button class="flex-1 py-4 px-6 rounded-full bg-primary text-white font-bold font-label text-xs uppercase tracking-widest shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+            Suivant
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</footer>
+<!-- Bottom Navigation Bar (Visual Placeholder for Ecosystem) -->
+<div class="hidden">
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-[#FCF9F4]/80 backdrop-blur-xl border-t border-[#D2C2CF]/20 z-40">
+<div class="flex flex-col items-center justify-center text-[#410050]/60">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Accueil</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#7F5700] scale-110 transition-transform">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Nouvelle</span>
+</div>
+</nav>
+</div>
+</body></html>

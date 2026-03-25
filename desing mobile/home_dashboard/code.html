@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#281900",
+              "surface-container": "#f0ede9",
+              "on-error": "#ffffff",
+              "on-error-container": "#93000a",
+              "primary": "#410050",
+              "on-surface-variant": "#4e434e",
+              "inverse-primary": "#f5adff",
+              "surface-container-high": "#ebe8e3",
+              "tertiary": "#3e0057",
+              "surface": "#fcf9f4",
+              "surface-variant": "#e5e2dd",
+              "inverse-on-surface": "#f3f0eb",
+              "inverse-surface": "#31302d",
+              "secondary-container": "#ffc565",
+              "on-tertiary-container": "#d283f1",
+              "background": "#fcf9f4",
+              "error-container": "#ffdad6",
+              "on-secondary": "#ffffff",
+              "on-secondary-container": "#765100",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f6f3ee",
+              "outline": "#80737f",
+              "on-secondary-fixed-variant": "#604100",
+              "on-primary": "#ffffff",
+              "error": "#ba1a1a",
+              "tertiary-fixed-dim": "#ecb2ff",
+              "tertiary-container": "#5d0d7d",
+              "surface-bright": "#fcf9f4",
+              "tertiary-fixed": "#f8d8ff",
+              "on-primary-fixed": "#350041",
+              "outline-variant": "#d2c2cf",
+              "on-tertiary": "#ffffff",
+              "primary-fixed": "#fed6ff",
+              "secondary-fixed-dim": "#f6bd5e",
+              "on-primary-container": "#d287de",
+              "secondary-fixed": "#ffdead",
+              "surface-dim": "#dcdad5",
+              "surface-tint": "#864394",
+              "on-tertiary-fixed": "#320047",
+              "primary-fixed-dim": "#f5adff",
+              "on-tertiary-fixed-variant": "#6c228c",
+              "on-background": "#1c1c19",
+              "secondary": "#7f5700",
+              "primary-container": "#5c1a6b",
+              "on-primary-fixed-variant": "#6c2a7a",
+              "surface-container-highest": "#e5e2dd",
+              "on-surface": "#1c1c19"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.25rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; -webkit-tap-highlight-color: transparent; }
+        h1, h2, .serif { font-family: 'Noto Serif', serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-32">
+<!-- Top App Bar -->
+<header class="bg-gradient-to-br from-[#410050] to-[#5C1A6B] dark:from-[#2A0035] dark:to-[#410050] text-white font-['Noto_Serif'] font-semibold tracking-tight docked full-width top-0 shadow-sm dark:shadow-none flex justify-between items-center w-full px-6 py-4 z-50 sticky">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined hover:bg-white/10 transition-colors p-2 rounded-full scale-95 active:duration-150 cursor-pointer">menu</span>
+<span class="font-['Noto_Serif'] text-xl italic text-white">L'Atelier Couture</span>
+</div>
+<span class="material-symbols-outlined hover:bg-white/10 transition-colors p-2 rounded-full scale-95 active:duration-150 cursor-pointer">more_vert</span>
+</header>
+<main class="px-6 pt-6 max-w-[393px] mx-auto overflow-x-hidden">
+<!-- Welcome Header -->
+<div class="flex justify-between items-end mb-6">
+<div>
+<h1 class="text-2xl font-bold leading-tight">Bonjour, Rania 👋</h1>
+<p class="text-sm opacity-60 font-medium">L'élégance se travaille chaque jour.</p>
+</div>
+<div class="flex items-center bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/20 shadow-sm">
+<span class="material-symbols-outlined text-sm cursor-pointer opacity-60 hover:opacity-100">chevron_left</span>
+<span class="text-xs font-bold font-label uppercase tracking-widest px-2">T1 2026</span>
+<span class="material-symbols-outlined text-sm cursor-pointer opacity-60 hover:opacity-100">chevron_right</span>
+</div>
+</div>
+<!-- Alert Banner -->
+<div class="mb-8 bg-error-container/50 border-l-4 border-error p-4 rounded-xl flex items-center gap-4 animate-pulse">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+<p class="text-on-error-container text-sm font-semibold">⚠️ 3 commandes dépassent le délai</p>
+</div>
+<!-- KPI Bento Grid -->
+<div class="grid grid-cols-2 gap-4 mb-10">
+<!-- Total Orders -->
+<div class="bg-primary p-5 rounded-xl text-white shadow-lg flex flex-col justify-between aspect-square relative overflow-hidden">
+<div class="z-10">
+<span class="material-symbols-outlined opacity-40 mb-2">shopping_bag</span>
+<p class="text-xs font-label uppercase tracking-widest opacity-70">Commandes</p>
+<h3 class="text-3xl font-bold mt-1 serif">47</h3>
+</div>
+<div class="absolute -right-4 -bottom-4 w-20 h-20 bg-white/5 rounded-full blur-2xl"></div>
+</div>
+<!-- Delayed -->
+<div class="bg-error p-5 rounded-xl text-white shadow-lg flex flex-col justify-between aspect-square">
+<div>
+<span class="material-symbols-outlined mb-2 animate-bounce">history</span>
+<p class="text-xs font-label uppercase tracking-widest opacity-70">En retard</p>
+<h3 class="text-3xl font-bold mt-1 serif">3</h3>
+</div>
+</div>
+<!-- On Time -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col items-center justify-center aspect-square text-center relative border border-outline-variant/10">
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-green-600" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="176" stroke-dashoffset="23" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-xs font-bold">87%</span>
+</div>
+<p class="text-[10px] font-label uppercase tracking-tighter mt-3 opacity-60">Livraisons à temps</p>
+</div>
+<!-- Revenue -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between aspect-square border-b-2 border-secondary">
+<div>
+<span class="material-symbols-outlined text-secondary mb-2">payments</span>
+<p class="text-xs font-label uppercase tracking-widest text-on-surface/50">Revenu (DZD)</p>
+<h3 class="text-xl font-bold mt-1 text-on-surface serif tracking-tighter">412 000</h3>
+</div>
+<div class="flex items-center text-green-600 text-[10px] font-bold">
+<span class="material-symbols-outlined text-xs">trending_up</span>
+<span>+12% vs T4</span>
+</div>
+</div>
+</div>
+<!-- Monthly Activity Chart -->
+<section class="mb-12">
+<h2 class="text-lg font-bold mb-6 serif flex items-center gap-2">
+                Activité Trimestrielle
+                <span class="h-[1px] flex-grow bg-secondary/20 ml-2"></span>
+</h2>
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+<div class="flex items-end justify-between h-40 gap-4 mb-6">
+<!-- Jan -->
+<div class="flex flex-col items-center flex-1 gap-1 h-full justify-end">
+<div class="w-full rounded-t-sm bg-gray-300" style="height: 20%;"></div>
+<div class="w-full bg-primary" style="height: 35%;"></div>
+<div class="w-full bg-tertiary-container" style="height: 15%;"></div>
+<div class="w-full rounded-b-sm bg-secondary" style="height: 10%;"></div>
+<span class="text-[10px] font-label font-bold mt-2">JAN</span>
+</div>
+<!-- Feb -->
+<div class="flex flex-col items-center flex-1 gap-1 h-full justify-end">
+<div class="w-full rounded-t-sm bg-gray-300" style="height: 15%;"></div>
+<div class="w-full bg-primary" style="height: 25%;"></div>
+<div class="w-full bg-tertiary-container" style="height: 40%;"></div>
+<div class="w-full rounded-b-sm bg-secondary" style="height: 10%;"></div>
+<span class="text-[10px] font-label font-bold mt-2">FEV</span>
+</div>
+<!-- Mar -->
+<div class="flex flex-col items-center flex-1 gap-1 h-full justify-end">
+<div class="w-full rounded-t-sm bg-gray-300" style="height: 10%;"></div>
+<div class="w-full bg-primary" style="height: 45%;"></div>
+<div class="w-full bg-tertiary-container" style="height: 10%;"></div>
+<div class="w-full rounded-b-sm bg-secondary" style="height: 25%;"></div>
+<span class="text-[10px] font-label font-bold mt-2 text-primary">MAR</span>
+</div>
+</div>
+<!-- Legend -->
+<div class="grid grid-cols-2 gap-y-2 gap-x-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-gray-300"></span>
+<span class="text-[10px] font-label font-semibold opacity-60">Simple</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-[10px] font-label font-semibold opacity-60">Brodé</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+<span class="text-[10px] font-label font-semibold opacity-60">Perlé</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-[10px] font-label font-semibold opacity-60">Mixte</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Orders -->
+<section class="mb-10">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-lg font-bold serif">Commandes Récentes</h2>
+<span class="text-secondary text-xs font-bold uppercase tracking-widest underline decoration-secondary/30">Tout voir</span>
+</div>
+<div class="space-y-4">
+<!-- Order 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm flex items-center gap-4 group active:scale-[0.98] transition-all">
+<div class="w-12 h-12 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+<img alt="Garment preview" class="w-full h-full object-cover opacity-90 group-hover:scale-110 transition-transform duration-500" data-alt="Close up of high quality silk fabric being embroidered with intricate gold thread in an artisan workshop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvyQwyyxbqKsI0e6lg05lr7ImQZyNt8xWT_5aioqZHIc7QSIrQFf4l38JobR0J_JzzliY_Ks1_DYt-9XaNIRBO8nA2RFm0E2zvf1Vk804WaZh-YYs60Z8HqtIJv2vbkqA8WfevFg3_gQA5LKngGDip2MbRw0zAa0SF2NixOiIKBo7W5ZqvfbCwq07HfZQSGLZGUU8-JkQfj9p-aPpVmFHmZ4SnGbFJOzO99H7mhxzeT5WzqRkqH03HXie8htFKlArADjal_lMsFlY"/>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-on-surface/40 font-label">#ORD-2026-042</span>
+<span class="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Brodé</span>
+</div>
+<h4 class="font-bold text-sm">Zahra Mansouri</h4>
+<p class="text-[11px] text-on-surface/60 mt-0.5">Livraison: 14 Mars</p>
+</div>
+<div class="flex flex-col items-end gap-2">
+<div class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest">Prêt</div>
+<span class="material-symbols-outlined text-on-surface/20">chevron_right</span>
+</div>
+</div>
+<!-- Order 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm flex items-center gap-4 group active:scale-[0.98] transition-all">
+<div class="w-12 h-12 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+<img alt="Garment preview" class="w-full h-full object-cover opacity-90 group-hover:scale-110 transition-transform duration-500" data-alt="Exquisite purple velvet fabric detailed with luxury pearlescent beads for a high-end fashion garment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpDb5uUcikZ2h2cMwCAvKt427RbyQkfokokAxMYDKEcZRxpP0ps0OAPkGvwq6bKEfU5iX-8Gc-05FERDBXuayYHzqTlx-PrsbX27cy-yGFeG0oxFDiIz5WvC1cMLww6D9TyWznsn5oXR-bjO_2Je-6cCWT5fDA0uY8HvzbVXJfEAIq3fSybtESfVHiD6M_7SR7B15VOf5HeQwoJEU5xX3uTebjPKU630xgDprQja2a85qyB21WSJKObkEu9k8FNzBqZCdzmxqbj0M"/>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-on-surface/40 font-label">#ORD-2026-045</span>
+<span class="text-[10px] bg-tertiary-container text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Perlé</span>
+</div>
+<h4 class="font-bold text-sm">Amira Kaddour</h4>
+<p class="text-[11px] text-on-surface/60 mt-0.5">Livraison: 18 Mars</p>
+</div>
+<div class="flex flex-col items-end gap-2">
+<div class="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest">En cours</div>
+<span class="material-symbols-outlined text-on-surface/20">chevron_right</span>
+</div>
+</div>
+<!-- Order 3 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm flex items-center gap-4 group active:scale-[0.98] transition-all">
+<div class="w-12 h-12 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+<img alt="Garment preview" class="w-full h-full object-cover opacity-90 group-hover:scale-110 transition-transform duration-500" data-alt="Traditional Algerian couture patterns with golden embroidery on premium white linen background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1D9kWJVmdXgW2pMxtD0RPPARrOboErxpn8ixvnBlRfntZpdPhsKd4R7vI04N26pXg7cPiTqrfUeZk80bJOn9fOLwOeXhAMJpx6UvMDQnVdGXdicgl3Mrls6FQZZMQZV9AMDwRHqIQAvNO_9DmRId6GsQMomGUgoHkjZIQnt-Fcixc4m6iY1i-jY3-zwpNztr8jZD9w4OinxqAPSvpyckYNp8rXoQiwrE2wgKevA_lpgKS_xikyBlrEfLlgk9XfP5TNq8VDPA8LiM"/>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-on-surface/40 font-label">#ORD-2026-048</span>
+<span class="text-[10px] bg-secondary/10 text-secondary px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Mixte</span>
+</div>
+<h4 class="font-bold text-sm">Meriem Belkaid</h4>
+<p class="text-[11px] text-on-surface/60 mt-0.5">Livraison: 22 Mars</p>
+</div>
+<div class="flex flex-col items-end gap-2">
+<div class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest">Urgent</div>
+<span class="material-symbols-outlined text-on-surface/20">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB: Nouvelle Commande -->
+<button class="fixed bottom-28 right-6 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-[0_12px_32px_rgba(65,0,80,0.3)] z-40 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+</button>
+<!-- Bottom Navigation Bar -->
+<nav class="bg-[#FCF9F4]/80 dark:bg-black/80 backdrop-blur-xl fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 z-50 rounded-t-[2rem] border-t border-[#D2C2CF]/20 shadow-[0_-4px_20px_rgba(65,0,80,0.06)]">
+<div class="flex flex-col items-center justify-center text-[#7F5700] dark:text-[#F6BD5E] scale-110 transition-transform active: transition-all duration-300 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Accueil</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#410050]/60 dark:text-white/40 hover:text-[#7F5700] cursor-pointer">
+<span class="material-symbols-outlined">reorder</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Commandes</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#410050]/60 dark:text-white/40 hover:text-[#7F5700] cursor-pointer">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Nouvelle</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#410050]/60 dark:text-white/40 hover:text-[#7F5700] cursor-pointer relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Alertes</span>
+<span class="absolute top-0 right-1 w-2 h-2 bg-error rounded-full border-2 border-[#FCF9F4]"></span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#410050]/60 dark:text-white/40 hover:text-[#7F5700] cursor-pointer">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Profil</span>
+</div>
+</nav>
+</body></html>

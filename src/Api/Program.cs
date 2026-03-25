@@ -37,6 +37,14 @@ builder.Services.AddMediator(options =>
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
 
+// Notifications services
+builder.Services.AddScoped<Couture.Notifications.Domain.NotificationService>();
+builder.Services.AddScoped<Couture.Notifications.Sms.ISmsGateway, Couture.Notifications.Sms.MockSmsGateway>();
+builder.Services.AddScoped<Couture.Notifications.Jobs.EvaluateOverdueOrdersJob>();
+builder.Services.AddScoped<Couture.Notifications.Jobs.EvaluateStalledOrdersJob>();
+builder.Services.AddScoped<Couture.Notifications.Jobs.PurgeExpiredNotificationsJob>();
+builder.Services.AddSignalR();
+
 // CORS
 builder.Services.AddCors(options =>
 {
@@ -59,12 +67,15 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHub<Couture.Notifications.Hub.NotificationHub>("/hubs/notifications");
+
 // Map module endpoints
 app.MapAuthEndpoints();
 app.MapOrderEndpoints();
 app.MapClientEndpoints();
 app.MapFinanceEndpoints();
 app.MapDashboardEndpoints();
+app.MapNotificationEndpoints();
 
 // Auto-migrate and seed in development
 if (app.Environment.IsDevelopment())

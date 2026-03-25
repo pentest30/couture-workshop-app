@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fiche Client - L'Atelier Couture</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#281900",
+              "surface-container": "#f0ede9",
+              "on-error": "#ffffff",
+              "on-error-container": "#93000a",
+              "primary": "#410050",
+              "on-surface-variant": "#4e434e",
+              "inverse-primary": "#f5adff",
+              "surface-container-high": "#ebe8e3",
+              "tertiary": "#3e0057",
+              "surface": "#fcf9f4",
+              "surface-variant": "#e5e2dd",
+              "inverse-on-surface": "#f3f0eb",
+              "inverse-surface": "#31302d",
+              "secondary-container": "#ffc565",
+              "on-tertiary-container": "#d283f1",
+              "background": "#fcf9f4",
+              "error-container": "#ffdad6",
+              "on-secondary": "#ffffff",
+              "on-secondary-container": "#765100",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f6f3ee",
+              "outline": "#80737f",
+              "on-secondary-fixed-variant": "#604100",
+              "on-primary": "#ffffff",
+              "error": "#ba1a1a",
+              "tertiary-fixed-dim": "#ecb2ff",
+              "tertiary-container": "#5d0d7d",
+              "surface-bright": "#fcf9f4",
+              "tertiary-fixed": "#f8d8ff",
+              "on-primary-fixed": "#350041",
+              "outline-variant": "#d2c2cf",
+              "on-tertiary": "#ffffff",
+              "primary-fixed": "#fed6ff",
+              "secondary-fixed-dim": "#f6bd5e",
+              "on-primary-container": "#d287de",
+              "secondary-fixed": "#ffdead",
+              "surface-dim": "#dcdad5",
+              "surface-tint": "#864394",
+              "on-tertiary-fixed": "#320047",
+              "primary-fixed-dim": "#f5adff",
+              "on-tertiary-fixed-variant": "#6c228c",
+              "on-background": "#1c1c19",
+              "secondary": "#7f5700",
+              "primary-container": "#5c1a6b",
+              "on-primary-fixed-variant": "#6c2a7a",
+              "surface-container-highest": "#e5e2dd",
+              "on-surface": "#1c1c19"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.25rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-nav {
+        background: rgba(252, 249, 244, 0.8);
+        backdrop-filter: blur(12px);
+      }
+      .stitch-border {
+        border-bottom: 1px dashed #F6BD5E;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-screen pb-32">
+<!-- Top App Bar -->
+<header class="bg-gradient-to-br from-[#410050] to-[#5C1A6B] text-white flex justify-between items-center w-full px-6 py-4 z-50 sticky top-0 shadow-sm">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined cursor-pointer">arrow_back</span>
+<h1 class="font-headline font-semibold tracking-tight text-lg">Fiche Client</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined cursor-pointer">more_vert</span>
+</div>
+</header>
+<main class="px-6 py-8 space-y-8">
+<!-- Client Header Card (Asymmetric Layout) -->
+<section class="relative">
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_12px_32px_rgba(65,0,80,0.06)] flex flex-col gap-6">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-headline text-xl font-bold italic shadow-inner">
+                            SB
+                        </div>
+<div>
+<h2 class="font-headline text-2xl font-bold text-on-surface">Mme Sara Benali</h2>
+<p class="font-label text-xs uppercase tracking-[0.15em] text-secondary font-bold">C-0042</p>
+</div>
+</div>
+<button class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">call</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/20">
+<div class="space-y-1">
+<p class="font-label text-[10px] uppercase tracking-widest text-outline">Total Commandes</p>
+<p class="font-headline text-lg font-semibold text-primary">12 commandes</p>
+</div>
+<div class="space-y-1">
+<p class="font-label text-[10px] uppercase tracking-widest text-outline">Volume d'affaires</p>
+<p class="font-headline text-lg font-semibold text-secondary">94 500 DZD</p>
+</div>
+</div>
+</div>
+<!-- Decorative Thread Accent -->
+<div class="absolute -bottom-2 right-8 w-1/2 h-[2px] bg-secondary-fixed-dim/40 rounded-full"></div>
+</section>
+<!-- Measurements Section -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-headline text-xl font-bold">Mesures &amp; Tailles</h3>
+<button class="font-label text-[10px] uppercase tracking-widest font-bold border border-secondary text-secondary px-3 py-1 rounded-full hover:bg-secondary/5 transition-colors">Modifier</button>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container-low p-3 rounded-lg border border-outline-variant/10 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">straighten</span>
+<div>
+<p class="text-[10px] font-label text-outline uppercase tracking-wider">Poitrine</p>
+<p class="font-headline font-bold text-sm">92cm</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg border border-outline-variant/10 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">straighten</span>
+<div>
+<p class="text-[10px] font-label text-outline uppercase tracking-wider">Taille</p>
+<p class="font-headline font-bold text-sm">74cm</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg border border-outline-variant/10 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">straighten</span>
+<div>
+<p class="text-[10px] font-label text-outline uppercase tracking-wider">L. Robe</p>
+<p class="font-headline font-bold text-sm">138cm</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg border border-outline-variant/10 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">straighten</span>
+<div>
+<p class="text-[10px] font-label text-outline uppercase tracking-wider">Manche</p>
+<p class="font-headline font-bold text-sm">58cm</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg border border-outline-variant/10 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">straighten</span>
+<div>
+<p class="text-[10px] font-label text-outline uppercase tracking-wider">Épaules</p>
+<p class="font-headline font-bold text-sm">40cm</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg border border-outline-variant/10 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">straighten</span>
+<div>
+<p class="text-[10px] font-label text-outline uppercase tracking-wider">Hanches</p>
+<p class="font-headline font-bold text-sm">102cm</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Order History Section -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-headline text-xl font-bold">Historique Commandes (12)</h3>
+<a class="font-label text-[11px] font-bold text-secondary uppercase tracking-widest flex items-center gap-1" href="#">Voir tout →</a>
+</div>
+<div class="space-y-3">
+<!-- Order Card 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between border border-outline-variant/5 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-md bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">apparel</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline font-bold text-sm">ORD-2201</span>
+<span class="bg-primary/10 text-primary text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Karakou</span>
+</div>
+<p class="text-[10px] font-label text-outline">14 Mars 2024</p>
+</div>
+</div>
+<div class="bg-green-100/50 text-green-800 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">Prêt</div>
+</div>
+<!-- Order Card 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between border border-outline-variant/5 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-md bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">checkroom</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline font-bold text-sm">ORD-2184</span>
+<span class="bg-tertiary-container/20 text-tertiary text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Caftan</span>
+</div>
+<p class="text-[10px] font-label text-outline">02 Fév 2024</p>
+</div>
+</div>
+<div class="bg-primary/10 text-primary text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">Broderie</div>
+</div>
+<!-- Order Card 3 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between border border-outline-variant/5 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-md bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">flare</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline font-bold text-sm">ORD-2150</span>
+<span class="bg-secondary/10 text-secondary text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Perlage</span>
+</div>
+<p class="text-[10px] font-label text-outline">15 Jan 2024</p>
+</div>
+</div>
+<div class="bg-surface-variant text-on-surface-variant text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">Livré</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Gold FAB -->
+<button class="fixed bottom-24 right-6 bg-secondary text-white px-6 py-4 rounded-full shadow-[0_12px_32px_rgba(127,87,0,0.25)] flex items-center gap-3 active:scale-95 transition-transform z-50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+<span class="font-label font-bold uppercase tracking-widest text-xs">Nouvelle Commande</span>
+</button>
+<!-- Bottom Nav Bar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-[#FCF9F4]/80 backdrop-blur-xl z-50 rounded-t-[2rem] border-t border-[#D2C2CF]/20 shadow-[0_-4px_20px_rgba(65,0,80,0.06)]">
+<div class="flex flex-col items-center justify-center text-[#410050]/60">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Accueil</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#410050]/60">
+<span class="material-symbols-outlined">reorder</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Commandes</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#410050]/60">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Nouvelle</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#410050]/60">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Alertes</span>
+</div>
+<!-- Profile Active -->
+<div class="flex flex-col items-center justify-center text-[#7F5700] scale-110 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Profil</span>
+</div>
+</nav>
+</body></html>

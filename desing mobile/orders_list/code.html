@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=393, height=852, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed": "#281900",
+                        "surface-container": "#f0ede9",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary": "#410050",
+                        "on-surface-variant": "#4e434e",
+                        "inverse-primary": "#f5adff",
+                        "surface-container-high": "#ebe8e3",
+                        "tertiary": "#3e0057",
+                        "surface": "#fcf9f4",
+                        "surface-variant": "#e5e2dd",
+                        "inverse-on-surface": "#f3f0eb",
+                        "inverse-surface": "#31302d",
+                        "secondary-container": "#ffc565",
+                        "on-tertiary-container": "#d283f1",
+                        "background": "#fcf9f4",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#765100",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f6f3ee",
+                        "outline": "#80737f",
+                        "on-secondary-fixed-variant": "#604100",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ecb2ff",
+                        "tertiary-container": "#5d0d7d",
+                        "surface-bright": "#fcf9f4",
+                        "tertiary-fixed": "#f8d8ff",
+                        "on-primary-fixed": "#350041",
+                        "outline-variant": "#d2c2cf",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#fed6ff",
+                        "secondary-fixed-dim": "#f6bd5e",
+                        "on-primary-container": "#d287de",
+                        "secondary-fixed": "#ffdead",
+                        "surface-dim": "#dcdad5",
+                        "surface-tint": "#864394",
+                        "on-tertiary-fixed": "#320047",
+                        "primary-fixed-dim": "#f5adff",
+                        "on-tertiary-fixed-variant": "#6c228c",
+                        "on-background": "#1c1c19",
+                        "secondary": "#7f5700",
+                        "primary-container": "#5c1a6b",
+                        "on-primary-fixed-variant": "#6c2a7a",
+                        "surface-container-highest": "#e5e2dd",
+                        "on-surface": "#1c1c19"
+                    },
+                    fontFamily: {
+                        "headline": ["Noto Serif"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #fcf9f4;
+            color: #1c1c19;
+            -webkit-font-smoothing: antialiased;
+        }
+        .editorial-shadow {
+            box-shadow: 0 12px 32px rgba(65, 0, 80, 0.06);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex items-center justify-center min-h-screen bg-surface-dim">
+<!-- Device Container (iPhone 14 Pro Dimensions) -->
+<div class="relative w-[393px] h-[852px] bg-background shadow-2xl overflow-hidden flex flex-col">
+<!-- TopAppBar (JSON Mapping) -->
+<header class="bg-gradient-to-br from-[#410050] to-[#5C1A6B] dark:from-[#2A0035] dark:to-[#410050] text-white font-['Noto_Serif'] font-semibold tracking-tight docked full-width top-0 z-50 flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-white hover:bg-white/10 transition-colors scale-95 active:duration-150 p-1 rounded-full cursor-pointer">menu</span>
+<h1 class="font-['Noto_Serif'] text-xl italic text-white">L'Atelier Couture</h1>
+</div>
+<span class="material-symbols-outlined text-white hover:bg-white/10 transition-colors scale-95 active:duration-150 p-1 rounded-full cursor-pointer">more_vert</span>
+</header>
+<!-- Sticky Sub-Header -->
+<div class="sticky top-0 z-40 bg-background pt-6 px-6 pb-2">
+<div class="flex justify-between items-end mb-6">
+<div>
+<span class="font-label text-[10px] uppercase tracking-[0.2em] text-secondary font-bold">Archives de l'atelier</span>
+<h2 class="font-headline text-2xl font-bold text-primary">Commandes — T1 2026</h2>
+</div>
+<div class="flex gap-4 mb-1">
+<span class="material-symbols-outlined text-primary/70 cursor-pointer">search</span>
+<span class="material-symbols-outlined text-primary/70 cursor-pointer">tune</span>
+</div>
+</div>
+<!-- Horizontal Scroll Filters -->
+<div class="flex gap-2 overflow-x-auto hide-scrollbar -mx-6 px-6 pb-4">
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-primary text-white text-xs font-bold font-label transition-all">Tous</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-surface-container-high text-primary/60 text-xs font-bold font-label hover:bg-surface-container-highest transition-all">En cours</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-surface-container-high text-primary/60 text-xs font-bold font-label hover:bg-surface-container-highest transition-all">En retard</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-surface-container-high text-primary/60 text-xs font-bold font-label hover:bg-surface-container-highest transition-all">Brodé</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-surface-container-high text-primary/60 text-xs font-bold font-label hover:bg-surface-container-highest transition-all">Perlé</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-surface-container-high text-primary/60 text-xs font-bold font-label hover:bg-surface-container-highest transition-all">Prêtes</button>
+</div>
+</div>
+<!-- Scrollable Order List -->
+<main class="flex-1 overflow-y-auto px-6 pb-32 space-y-4">
+<!-- Order Card 1 (Active) -->
+<div class="relative bg-surface-container-lowest rounded-xl overflow-hidden editorial-shadow group active:scale-[0.98] transition-all">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+<div class="p-5 pl-7">
+<div class="flex justify-between items-start mb-2">
+<span class="font-body text-xs font-bold tracking-wider text-on-surface-variant">CMD-2026-0042</span>
+<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/10 text-primary">Embroidery</span>
+</div>
+<h3 class="font-headline text-xl text-on-surface mb-3">Mme Sara Benali</h3>
+<div class="flex items-center gap-6 text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-secondary">architecture</span>
+<span class="text-xs font-medium">Brodé</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-secondary">calendar_today</span>
+<span class="text-xs font-medium">28 mars</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Order Card 2 (Overdue) -->
+<div class="relative bg-error/5 rounded-xl overflow-hidden border border-error/10 active:scale-[0.98] transition-all">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-error"></div>
+<div class="p-5 pl-7">
+<div class="flex justify-between items-start mb-2">
+<span class="font-body text-xs font-bold tracking-wider text-error">CMD-2026-0038</span>
+<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-error text-white">Retard: 2j</span>
+</div>
+<h3 class="font-headline text-xl text-on-surface mb-3">Mme Leila Mansouri</h3>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm text-secondary">diamond</span>
+<span class="text-xs font-medium">Perlage</span>
+</div>
+<div class="flex items-center gap-1.5 text-error">
+<span class="material-symbols-outlined text-sm">event_busy</span>
+<span class="text-xs font-bold">14 mars</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Order Card 3 (Processing) -->
+<div class="relative bg-surface-container-lowest rounded-xl overflow-hidden editorial-shadow active:scale-[0.98] transition-all">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-secondary"></div>
+<div class="p-5 pl-7">
+<div class="flex justify-between items-start mb-2">
+<span class="font-body text-xs font-bold tracking-wider text-on-surface-variant">CMD-2026-0045</span>
+<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary">Couture</span>
+</div>
+<h3 class="font-headline text-xl text-on-surface mb-3">Mme Amina Ziani</h3>
+<div class="flex items-center gap-6 text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-secondary">straighten</span>
+<span class="text-xs font-medium">Ajustements</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-secondary">calendar_today</span>
+<span class="text-xs font-medium">02 avril</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Visual Break / Image Feature -->
+<div class="rounded-xl overflow-hidden h-40 relative group cursor-pointer">
+<img alt="Détail haute couture" class="w-full h-full object-cover" data-alt="Close-up of intricate hand-beaded gold embroidery on dark velvet fabric in a luxury atelier setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaUk_40m9TIqpTjrnbZD3o3L8xfg30TXaOAmAh2CPO46KN929vFlMheNYnCrjKyV7to8rAZJkJAwEi2uLvsIG0WmI3ipoB-oJ0lCKT_BSqU28SyFcyJd6rW8gBO6Ri_wNSPOCpaqwe7c3LVgy6_pVchgxCmUME5JeNppyagyMgFVZIpkGKucSmfNExcJTmSgVKEjxbjGawcUxM5u21EGp_-tn_vMdaBzustbQ56HTZxXeu2YEe_bMN2LONa5QhKx9VpyalShfeVfI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex flex-col justify-end p-5">
+<p class="text-white/80 text-[10px] uppercase font-bold tracking-widest mb-1">Inspiration du jour</p>
+<p class="text-white font-headline text-lg italic">La soie et l'aiguille d'or.</p>
+</div>
+</div>
+<!-- Order Card 4 -->
+<div class="relative bg-surface-container-lowest rounded-xl overflow-hidden editorial-shadow active:scale-[0.98] transition-all">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary/20"></div>
+<div class="p-5 pl-7">
+<div class="flex justify-between items-start mb-2">
+<span class="font-body text-xs font-bold tracking-wider text-on-surface-variant">CMD-2026-0048</span>
+<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-surface-container-highest text-on-surface-variant">Planifié</span>
+</div>
+<h3 class="font-headline text-xl text-on-surface mb-3">Mme Myriam K.</h3>
+<div class="flex items-center gap-6 text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-secondary">content_cut</span>
+<span class="text-xs font-medium">Coupe</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-secondary">calendar_today</span>
+<span class="text-xs font-medium">15 avril</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button (FAB) -->
+<button class="fixed bottom-28 right-8 w-14 h-14 rounded-full bg-secondary-container text-on-secondary-container shadow-[0_12px_32px_rgba(65,0,80,0.15)] flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-40">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<!-- BottomNavBar (JSON Mapping) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-[#FCF9F4]/80 dark:bg-black/80 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-[2rem] border-t border-[#D2C2CF]/20 shadow-[0_-4px_20px_rgba(65,0,80,0.06)]">
+<a class="flex flex-col items-center justify-center text-[#410050]/60 dark:text-white/40 hover:text-[#7F5700] Active: transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Accueil</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7F5700] dark:text-[#F6BD5E] scale-110 transition-transform Active: transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">reorder</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Commandes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#410050]/60 dark:text-white/40 hover:text-[#7F5700] Active: transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined mb-1">add_circle</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Nouvelle</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#410050]/60 dark:text-white/40 hover:text-[#7F5700] Active: transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined mb-1">notifications</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Alertes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#410050]/60 dark:text-white/40 hover:text-[#7F5700] Active: transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Profil</span>
+</a>
+</nav>
+</div>
+</body></html>
