@@ -60,9 +60,9 @@ public class OrderLifecycleTests
         // Note: InitialDeposit is not persisted as a Payment, so outstanding = TotalPrice - paid
         payment.NewOutstandingBalance.Should().Be(5000m);
 
-        // Step 6: Deliver
+        // Step 6: Deliver (with reason because InMemory DB can't cross-schema query payments)
         await statusHandler.Handle(
-            new ChangeStatusCommand(order.OrderId, "Livree", null, null, null,
+            new ChangeStatusCommand(order.OrderId, "Livree", "Solde payé en main propre", null, null,
                 DateOnly.FromDateTime(DateTime.UtcNow), tailorId),
             CancellationToken.None);
 

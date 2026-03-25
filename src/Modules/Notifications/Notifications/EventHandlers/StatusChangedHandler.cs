@@ -67,5 +67,15 @@ public sealed class StatusChangedHandler : INotificationHandler<StatusChangedEve
                 $"Commande {evt.OrderCode} vous a été assignée (perlage).",
                 ct: ct);
         }
+
+        // N07: New tailor assigned (moving to EnCours)
+        if (evt.ToStatus == "EnCours" && order.AssignedTailorId.HasValue)
+        {
+            await _notificationService.CreateAndSendAsync(
+                NotificationType.N07_Assigned, evt.OrderId.Value, order.AssignedTailorId.Value,
+                $"Nouvelle commande assignée: {evt.OrderCode}",
+                $"Commande {evt.OrderCode} vous a été assignée (couture).",
+                ct: ct);
+        }
     }
 }

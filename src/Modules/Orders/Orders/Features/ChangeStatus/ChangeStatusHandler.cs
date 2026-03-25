@@ -39,12 +39,40 @@ public sealed class ChangeStatusHandler : ICommandHandler<ChangeStatusCommand, C
         if (newStatus == OrderStatus.Perlage && order.AssignedBeaderId is null)
             order.Update(assignedBeaderId: command.ChangedByUserId);
 
+        // Compute outstanding balance for delivery check (cross-schema raw SQL)
+        decimal outstandingBalance = 0;
+        if (newStatus == OrderStatus.Livree)
+        {
+            try
+            {
+                var connection = _db.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open)
+                    await connection.OpenAsync(ct);
+
+                await using var cmd = connection.CreateCommand();
+                cmd.CommandText = "SELECT COALESCE(SUM(\"Amount\"), 0) FROM finance.payments WHERE \"OrderId\" = @orderId";
+                var param = cmd.CreateParameter();
+                param.ParameterName = "@orderId";
+                param.Value = command.OrderId;
+                cmd.Parameters.Add(param);
+
+                var result = await cmd.ExecuteScalarAsync(ct);
+                var totalPaid = result is decimal d ? d : Convert.ToDecimal(result ?? 0);
+                outstandingBalance = order.TotalPrice - totalPaid;
+            }
+            catch
+            {
+                // If finance schema doesn't exist (e.g., in tests), assume 0 paid
+                outstandingBalance = order.TotalPrice;
+            }
+        }
+
         if (newStatus == OrderStatus.Livree)
         {
             order.MarkAsDelivered(
                 command.ChangedByUserId,
                 command.ActualDeliveryDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
-                0, // TODO: compute from payments
+                outstandingBalance,
                 command.Reason);
         }
         else

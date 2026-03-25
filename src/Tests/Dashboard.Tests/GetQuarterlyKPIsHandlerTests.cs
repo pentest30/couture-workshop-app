@@ -14,10 +14,11 @@ public class GetQuarterlyKPIsHandlerTests
         var (ordersDb, financeDb) = TestDbHelper.Create();
 
         // Seed 3 orders in Q1 2026 (Jan-Mar)
+        var future = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30));
         ordersDb.Orders.AddRange(
-            Order.Create("CMD-2026-0001", Guid.NewGuid(), WorkType.Simple, new DateOnly(2026, 3, 15), 10000m),
-            Order.Create("CMD-2026-0002", Guid.NewGuid(), WorkType.Brode, new DateOnly(2026, 3, 20), 20000m),
-            Order.Create("CMD-2026-0003", Guid.NewGuid(), WorkType.Mixte, new DateOnly(2026, 4, 15), 30000m));
+            Order.Create("CMD-2026-0001", Guid.NewGuid(), WorkType.Simple, future, 10000m),
+            Order.Create("CMD-2026-0002", Guid.NewGuid(), WorkType.Brode, future.AddDays(10), 20000m),
+            Order.Create("CMD-2026-0003", Guid.NewGuid(), WorkType.Mixte, future.AddDays(20), 30000m));
         await ordersDb.SaveChangesAsync();
 
         // Seed payment

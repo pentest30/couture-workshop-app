@@ -67,6 +67,13 @@ public sealed class Order : AggregateRoot
         if (totalPrice <= 0)
             throw new InvalidOperationException("Total price must be greater than zero.");
 
+        // RG02: Minimum delivery date per work type
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var minDate = today.AddDays(workType.MinDeliveryBusinessDays);
+        if (expectedDeliveryDate < minDate)
+            throw new InvalidOperationException(
+                $"Delivery date must be at least {workType.MinDeliveryBusinessDays} business day(s) after today for {workType.Label} orders. Earliest: {minDate}");
+
         var order = new Order
         {
             Id = OrderId.From(Guid.NewGuid()),
@@ -157,6 +164,14 @@ public sealed class Order : AggregateRoot
         if (assignedTailorId.HasValue) AssignedTailorId = assignedTailorId.Value;
         if (assignedEmbroidererId.HasValue) AssignedEmbroidererId = assignedEmbroidererId.Value;
         if (assignedBeaderId.HasValue) AssignedBeaderId = assignedBeaderId.Value;
+    }
+
+    /// <summary>RG04: Manager can add note on delivered order</summary>
+    public void AddNote(string note)
+    {
+        TechnicalNotes = string.IsNullOrWhiteSpace(TechnicalNotes)
+            ? note
+            : $"{TechnicalNotes}\n---\n{note}";
     }
 
     public void AddPhoto(string fileName, string storagePath, Guid uploadedBy)
