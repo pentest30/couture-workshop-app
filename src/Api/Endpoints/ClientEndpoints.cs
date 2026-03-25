@@ -34,8 +34,19 @@ public static class ClientEndpoints
 
     private static async Task<IResult> CreateClient([FromBody] CreateClientCommand command, IMediator mediator)
     {
-        try { return Results.Created($"/api/clients/{(await mediator.Send(command)).ClientId}", await mediator.Send(command)); }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("already exists")) { return Results.Conflict(new { error = ex.Message }); }
+        try
+        {
+            var result = await mediator.Send(command);
+            return Results.Created($"/api/clients/{result.ClientId}", result);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+        {
+            return Results.Conflict(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
     }
     private static async Task<IResult> ListClients(IMediator mediator, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => Results.Ok(await mediator.Send(new ListClientsQuery(search, page, pageSize)));

@@ -1,3 +1,4 @@
+using Couture.Clients.Persistence;
 using Couture.Orders.Contracts.Dtos;
 using Couture.Orders.Domain;
 using Couture.Orders.Persistence;
@@ -9,8 +10,13 @@ namespace Couture.Orders.Features.ListOrders;
 public sealed class ListOrdersHandler : IQueryHandler<ListOrdersQuery, PagedResultDto<OrderSummaryDto>>
 {
     private readonly OrdersDbContext _db;
+    private readonly ClientsDbContext _clientsDb;
 
-    public ListOrdersHandler(OrdersDbContext db) => _db = db;
+    public ListOrdersHandler(OrdersDbContext db, ClientsDbContext clientsDb)
+    {
+        _db = db;
+        _clientsDb = clientsDb;
+    }
 
     public async ValueTask<PagedResultDto<OrderSummaryDto>> Handle(ListOrdersQuery query, CancellationToken ct)
     {
@@ -75,6 +81,52 @@ public sealed class ListOrdersHandler : IQueryHandler<ListOrdersQuery, PagedResu
                 o.ExpectedDeliveryDate, delay, isLate,
                 o.TotalPrice, 0,
                 null, o.CreatedAt);
+        }).ToList();
+
+        // Resolve client names (load all then filter in-memory to avoid EF translation issues)
+        var clientIds = items.Select(i => i.ClientId).Distinct().ToHashSet();
+        var allClients = await _clientsDb.Clients.AsNoTracking().ToListAsync(ct);
+        var clientNames = allClients
+            .Where(c => clientIds.Contains(c.Id.Value))
+            .ToDictionary(c => c.Id.Value, c => c.FullName);
+
+        items = items.Select(i => i with { ClientName = clientNames.GetValueOrDefault(i.ClientId) }).ToList();
+
+        // Compute outstanding balances (cross-schema query to finance.payments)
+        var orderIds = items.Select(i => i.Id).ToList();
+        var paymentTotals = new Dictionary<Guid, decimal>();
+
+        if (orderIds.Count > 0)
+        {
+            var connection = _db.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open)
+                await connection.OpenAsync(ct);
+
+            await using var cmd = connection.CreateCommand();
+            var paramList = string.Join(",", orderIds.Select((_, idx) => $"@p{idx}"));
+            cmd.CommandText = $"SELECT \"OrderId\", SUM(\"Amount\") as \"TotalPaid\" FROM finance.payments WHERE \"OrderId\" IN ({paramList}) GROUP BY \"OrderId\"";
+
+            for (int idx = 0; idx < orderIds.Count; idx++)
+            {
+                var param = cmd.CreateParameter();
+                param.ParameterName = $"@p{idx}";
+                param.Value = orderIds[idx];
+                cmd.Parameters.Add(param);
+            }
+
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                var orderId = reader.GetGuid(0);
+                var totalPaid = reader.GetDecimal(1);
+                paymentTotals[orderId] = totalPaid;
+            }
+        }
+
+        items = items.Select(i =>
+        {
+            var totalPaid = paymentTotals.GetValueOrDefault(i.Id, 0);
+            return i with { OutstandingBalance = i.TotalPrice - totalPaid };
         }).ToList();
 
         return new PagedResultDto<OrderSummaryDto>(items, totalCount, query.Page, query.PageSize);

@@ -1,3 +1,4 @@
+using Couture.Clients.Persistence;
 using Couture.Orders.Contracts;
 using Couture.Orders.Contracts.Dtos;
 using Couture.Orders.Persistence;
@@ -9,8 +10,13 @@ namespace Couture.Orders.Features.GetOrder;
 public sealed class GetOrderHandler : IQueryHandler<GetOrderQuery, OrderDetailDto?>
 {
     private readonly OrdersDbContext _db;
+    private readonly ClientsDbContext _clientsDb;
 
-    public GetOrderHandler(OrdersDbContext db) => _db = db;
+    public GetOrderHandler(OrdersDbContext db, ClientsDbContext clientsDb)
+    {
+        _db = db;
+        _clientsDb = clientsDb;
+    }
 
     public async ValueTask<OrderDetailDto?> Handle(GetOrderQuery query, CancellationToken ct)
     {
@@ -22,6 +28,12 @@ public sealed class GetOrderHandler : IQueryHandler<GetOrderQuery, OrderDetailDt
             .FirstOrDefaultAsync(o => o.Id == id, ct);
 
         if (order is null) return null;
+
+        var clientId = Couture.Clients.Contracts.ClientId.From(order.ClientId);
+        var client = await _clientsDb.Clients
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == clientId, ct);
+        var clientName = client?.FullName;
 
         var transitions = order.Transitions.OrderBy(t => t.TransitionedAt).ToList();
         var timeline = new List<TimelineEntryDto>();
@@ -48,7 +60,7 @@ public sealed class GetOrderHandler : IQueryHandler<GetOrderQuery, OrderDetailDt
         var delayDays = isLate ? (DateOnly.FromDateTime(DateTime.UtcNow).DayNumber - order.ExpectedDeliveryDate.DayNumber) : 0;
 
         return new OrderDetailDto(
-            order.Id.Value, order.Code, order.ClientId, null,
+            order.Id.Value, order.Code, order.ClientId, clientName,
             order.Status.Name, order.Status.Label, order.Status.Color,
             order.WorkType.Name, order.WorkType.Label,
             order.Description, order.Fabric, order.TechnicalNotes,
