@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/providers.dart';
 import '../../core/widgets/gold_divider.dart';
+import 'measurements_screen.dart';
 
 class ClientProfileScreen extends ConsumerStatefulWidget {
   final String clientId;
@@ -111,10 +112,15 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text('Mesures & Tailles', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
               TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Fonctionnalite a venir'), duration: Duration(seconds: 2)),
-                  );
+                onPressed: () async {
+                  final result = await Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => MeasurementsScreen(
+                      clientId: widget.clientId,
+                      clientName: '${c['firstName']} ${c['lastName']}',
+                      currentMeasurements: c['currentMeasurements'] ?? [],
+                    ),
+                  ));
+                  if (result == true) _load(); // Reload after saving
                 },
                 child: Text('MODIFIER', style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1, color: AppColors.secondary)),
               ),

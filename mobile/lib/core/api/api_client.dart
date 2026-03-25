@@ -173,4 +173,27 @@ class ApiClient {
     final response = await dio.get('/api/orders/$orderId/payments');
     return _handleResponse(response) as List<dynamic>;
   }
+
+  // Measurements
+  Future<Map<String, dynamic>> getMeasurementHistory(String clientId) async {
+    final response = await dio.get('/api/clients/$clientId/measurements');
+    return _handleResponse(response) as Map<String, dynamic>;
+  }
+
+  Future<void> recordMeasurements(String clientId, List<Map<String, dynamic>> measurements) async {
+    final response = await dio.post('/api/clients/$clientId/measurements', data: {
+      'measurements': measurements,
+    });
+    _handleResponse(response);
+  }
+
+  Future<List<dynamic>> getMeasurementFields() async {
+    final response = await dio.get('/api/measurement-fields');
+    // This endpoint may not exist yet, return empty if 404
+    try {
+      return _handleResponse(response) as List<dynamic>;
+    } catch (_) {
+      return [];
+    }
+  }
 }

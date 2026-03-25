@@ -12,6 +12,7 @@ class ShellScreen extends StatelessWidget {
     if (location.startsWith('/orders')) return 1;
     if (location.startsWith('/new-order')) return 2;
     if (location.startsWith('/notifications')) return 3;
+    if (location.startsWith('/clients')) return 4;
     return 0;
   }
 
@@ -31,6 +32,7 @@ class ShellScreen extends StatelessWidget {
             1 => context.go('/orders'),
             2 => context.go('/new-order'),
             3 => context.go('/notifications'),
+            4 => context.go('/clients'),
             _ => null,
           },
           items: const [
@@ -38,6 +40,7 @@ class ShellScreen extends StatelessWidget {
             BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), activeIcon: Icon(Icons.receipt_long), label: 'Commandes'),
             BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline, size: 32), activeIcon: Icon(Icons.add_circle, size: 32), label: 'Nouvelle'),
             BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), activeIcon: Icon(Icons.notifications), label: 'Alertes'),
+            BottomNavigationBarItem(icon: Icon(Icons.people_outlined), activeIcon: Icon(Icons.people), label: 'Profil'),
           ],
         ),
       ),
