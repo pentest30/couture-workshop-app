@@ -21,6 +21,7 @@ public static class DashboardEndpoints
         group.MapGet("/charts/status-distribution", GetStatusDistribution);
         group.MapGet("/charts/revenue-trend", GetRevenueTrend);
         group.MapGet("/charts/delay-by-artisan", GetDelayByArtisan);
+        group.MapGet("/export", ExportReport);
     }
 
     private static async Task<IResult> GetKPIs([FromQuery] int year, [FromQuery] int quarter, IMediator mediator)
@@ -40,4 +41,10 @@ public static class DashboardEndpoints
 
     private static async Task<IResult> GetDelayByArtisan([FromQuery] int year, [FromQuery] int quarter, IMediator mediator)
         => Results.Ok(await mediator.Send(new GetDelayByArtisanQuery(year, quarter)));
+
+    private static async Task<IResult> ExportReport([FromQuery] int year, [FromQuery] int quarter, [FromQuery] string format, IMediator mediator)
+    {
+        var result = await mediator.Send(new Couture.Dashboard.Features.ExportReport.ExportReportQuery(year, quarter, format));
+        return Results.File(result.Data, result.ContentType, result.FileName);
+    }
 }

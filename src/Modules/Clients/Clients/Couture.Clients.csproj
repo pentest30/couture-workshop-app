@@ -7,6 +7,6 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Ardalis.SmartEnum" />
     <PackageReference Include="Ardalis.SmartEnum.EFCore" />
-
+    <PackageReference Include="Mediator.Abstractions" />
   </ItemGroup>
 </Project>

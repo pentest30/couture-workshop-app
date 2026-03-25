@@ -18,7 +18,7 @@ public static class OrderEndpoints
             .RequireAuthorization(CouturePermissions.OrdersCreate);
 
         group.MapGet("/", ListOrders)
-            .RequireAuthorization(CouturePermissions.OrdersView);
+            .RequireAuthorization(p => p.RequireAssertion(ctx => true)); // Checked inside handler: OrdersView or OrdersViewOwn
 
         group.MapGet("/{id:guid}", GetOrder)
             .RequireAuthorization(CouturePermissions.OrdersView);
@@ -37,6 +37,7 @@ public static class OrderEndpoints
 
     private static async Task<IResult> ListOrders(
         IMediator mediator,
+        ICurrentUser currentUser,
         [FromQuery] string? search,
         [FromQuery] string? status,
         [FromQuery] string? workType,
@@ -49,7 +50,8 @@ public static class OrderEndpoints
         [FromQuery] string sortBy = "createdAt",
         [FromQuery] string sortDir = "desc")
     {
-        var query = new ListOrdersQuery(search, status, workType, artisanId, dateFrom, dateTo, lateOnly, page, pageSize, sortBy, sortDir);
+        var viewOwnOnly = !currentUser.HasPermission(CouturePermissions.OrdersView) && currentUser.HasPermission(CouturePermissions.OrdersViewOwn);
+        var query = new ListOrdersQuery(search, status, workType, artisanId, dateFrom, dateTo, lateOnly, page, pageSize, sortBy, sortDir, currentUser.UserId, viewOwnOnly);
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

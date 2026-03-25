@@ -34,6 +34,12 @@ public sealed class ListOrdersHandler : IQueryHandler<ListOrdersQuery, PagedResu
             q = q.Where(o => o.AssignedTailorId == id || o.AssignedEmbroidererId == id || o.AssignedBeaderId == id);
         }
 
+        if (query.ViewOwnOnly && query.CurrentUserId.HasValue)
+        {
+            var uid = query.CurrentUserId.Value;
+            q = q.Where(o => o.AssignedTailorId == uid || o.AssignedEmbroidererId == uid || o.AssignedBeaderId == uid);
+        }
+
         if (query.DateFrom.HasValue)
             q = q.Where(o => o.ReceptionDate >= query.DateFrom.Value);
 
