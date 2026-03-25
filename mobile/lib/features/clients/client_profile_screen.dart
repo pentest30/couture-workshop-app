@@ -36,7 +36,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
       // Load client orders
       try {
         final ordersData = await ref.read(apiClientProvider).getOrders(clientId: widget.clientId);
-        _orders = (ordersData['items'] as List?) ?? [];
+        if (mounted) setState(() { _orders = (ordersData['items'] as List?) ?? []; });
       } catch (_) {}
     } catch (e) {
       if (mounted) setState(() { _loading = false; _error = 'Impossible de charger le client: $e'; });
