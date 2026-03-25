@@ -27,6 +27,9 @@ public sealed class Order : AggregateRoot
     public string? Arrangement { get; private set; }
     public string? AffectedZones { get; private set; }
 
+    // Catalog reference
+    public Guid? CatalogModelId { get; private set; }
+
     // Planning
     public DateOnly ReceptionDate { get; private set; }
     public DateOnly ExpectedDeliveryDate { get; private set; }
@@ -62,7 +65,8 @@ public sealed class Order : AggregateRoot
         string? technicalNotes = null,
         Guid? assignedTailorId = null,
         Guid? assignedEmbroidererId = null,
-        Guid? assignedBeaderId = null)
+        Guid? assignedBeaderId = null,
+        Guid? catalogModelId = null)
     {
         if (totalPrice <= 0)
             throw new InvalidOperationException("Total price must be greater than zero.");
@@ -90,6 +94,7 @@ public sealed class Order : AggregateRoot
             AssignedTailorId = assignedTailorId,
             AssignedEmbroidererId = assignedEmbroidererId,
             AssignedBeaderId = assignedBeaderId,
+            CatalogModelId = catalogModelId,
         };
 
         order.AddTransition(null, OrderStatus.Recue, null, "System");
@@ -172,6 +177,13 @@ public sealed class Order : AggregateRoot
         TechnicalNotes = string.IsNullOrWhiteSpace(TechnicalNotes)
             ? note
             : $"{TechnicalNotes}\n---\n{note}";
+    }
+
+    public void Deactivate()
+    {
+        if (Status != OrderStatus.Recue)
+            throw new InvalidOperationException("Seules les commandes en statut 'Reçue' peuvent être supprimées.");
+        IsActive = false;
     }
 
     public void AddPhoto(string fileName, string storagePath, Guid uploadedBy)

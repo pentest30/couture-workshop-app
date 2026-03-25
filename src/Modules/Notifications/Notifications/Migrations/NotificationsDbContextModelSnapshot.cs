@@ -37,6 +37,9 @@ namespace Couture.Notifications.Migrations
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 

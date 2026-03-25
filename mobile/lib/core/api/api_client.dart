@@ -9,7 +9,7 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  static const baseUrl = 'http://192.168.100.80:5050'; // LAN IP (phone must be on same Wi-Fi)
+  static const baseUrl = 'http://192.168.100.80:5000'; // LAN IP (phone must be on same Wi-Fi)
 
   late final Dio dio;
   String? _token;
@@ -69,13 +69,15 @@ class ApiClient {
   }
 
   // Orders
-  Future<Map<String, dynamic>> getOrders({int page = 1, String? status, String? search, bool? lateOnly, String? workType, String? clientId}) async {
+  Future<Map<String, dynamic>> getOrders({int page = 1, String? status, String? search, bool? lateOnly, String? workType, String? clientId, String? dateFrom, String? dateTo}) async {
     final params = <String, dynamic>{'page': page, 'pageSize': 20};
     if (status != null) params['status'] = status;
     if (search != null) params['search'] = search;
     if (lateOnly == true) params['lateOnly'] = true;
     if (workType != null) params['workType'] = workType;
     if (clientId != null) params['clientId'] = clientId;
+    if (dateFrom != null) params['dateFrom'] = dateFrom;
+    if (dateTo != null) params['dateTo'] = dateTo;
     final response = await dio.get('/api/orders', queryParameters: params);
     return _handleResponse(response) as Map<String, dynamic>;
   }
@@ -98,6 +100,20 @@ class ApiClient {
 
   Future<Map<String, dynamic>> createOrder(Map<String, dynamic> data) async {
     final response = await dio.post('/api/orders', data: data);
+    return _handleResponse(response) as Map<String, dynamic>;
+  }
+
+  // Catalog
+  Future<Map<String, dynamic>> getCatalogModels({String? search, String? category, int page = 1}) async {
+    final params = <String, dynamic>{'page': page, 'pageSize': 20};
+    if (search != null) params['search'] = search;
+    if (category != null) params['category'] = category;
+    final response = await dio.get('/api/catalog', queryParameters: params);
+    return _handleResponse(response) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getCatalogModel(String id) async {
+    final response = await dio.get('/api/catalog/$id');
     return _handleResponse(response) as Map<String, dynamic>;
   }
 
@@ -142,6 +158,17 @@ class ApiClient {
 
   Future<void> markAllRead() async {
     final response = await dio.post('/api/notifications/read-all');
+    _handleResponse(response);
+  }
+
+  // Notification admin config
+  Future<List<dynamic>> getNotificationConfigs() async {
+    final response = await dio.get('/api/notifications/admin/configs');
+    return _handleResponse(response) as List<dynamic>;
+  }
+
+  Future<void> updateNotificationConfig(int typeValue, Map<String, dynamic> data) async {
+    final response = await dio.put('/api/notifications/admin/config/$typeValue', data: data);
     _handleResponse(response);
   }
 

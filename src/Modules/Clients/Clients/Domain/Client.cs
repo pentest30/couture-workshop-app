@@ -51,4 +51,6 @@ public sealed class Client : AggregateRoot
     }
 
     public string FullName => $"{FirstName} {LastName}";
+
+    public void Deactivate() => IsActive = false;
 }

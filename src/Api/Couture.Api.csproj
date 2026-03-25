@@ -6,6 +6,7 @@
     <ProjectReference Include="../Modules/Finance/Finance/Couture.Finance.csproj" />
     <ProjectReference Include="../Modules/Dashboard/Dashboard/Couture.Dashboard.csproj" />
     <ProjectReference Include="../Modules/Notifications/Notifications/Couture.Notifications.csproj" />
+    <ProjectReference Include="../Modules/Catalog/Catalog/Couture.Catalog.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
@@ -13,5 +14,7 @@
     <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
     <PackageReference Include="Mediator.Abstractions" />
     <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 </Project>

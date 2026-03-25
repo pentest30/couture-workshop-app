@@ -17,96 +17,159 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
   List<dynamic> _orders = [];
   bool _loading = true;
   String? _error;
-  String _selectedFilter = 'Tous';
-  final _filters = ['Tous', 'En cours', 'En retard', 'Brodé'];
+
+  // Semester filter
+  late int _selectedYear;
+  late int _selectedSemester; // 1 or 2
+  String? _selectedStatus; // null = all
+
+  static const _allStatuses = [
+    ('Recue', 'Recue'),
+    ('EnAttente', 'En Attente'),
+    ('EnCours', 'En Cours'),
+    ('Broderie', 'Broderie'),
+    ('Perlage', 'Perlage'),
+    ('Retouche', 'Retouche'),
+    ('Prete', 'Prete'),
+    ('Livree', 'Livree'),
+  ];
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _selectedYear = now.year;
+    _selectedSemester = now.month <= 6 ? 1 : 2;
+    _loadOrders();
+  }
+
+  (String, String) get _semesterDates {
+    if (_selectedSemester == 1) {
+      return ('$_selectedYear-01-01', '$_selectedYear-06-30');
+    } else {
+      return ('$_selectedYear-07-01', '$_selectedYear-12-31');
+    }
+  }
+
+  List<String> get _semesterOptions {
+    final now = DateTime.now();
+    final options = <String>[];
+    for (var y = now.year; y >= now.year - 2; y--) {
+      options.add('S1 $y');
+      options.add('S2 $y');
+    }
+    return options;
+  }
+
+  String get _currentSemesterLabel => 'S$_selectedSemester $_selectedYear';
+
+  void _onSemesterChanged(String? value) {
+    if (value == null) return;
+    final parts = value.split(' ');
+    final sem = int.parse(parts[0].substring(1));
+    final year = int.parse(parts[1]);
+    setState(() {
+      _selectedSemester = sem;
+      _selectedYear = year;
+    });
     _loadOrders();
   }
 
   Future<void> _loadOrders() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() { _loading = true; _error = null; });
     try {
       final api = ref.read(apiClientProvider);
-      String? status;
-      bool? lateOnly;
-      String? workType;
-
-      switch (_selectedFilter) {
-        case 'En cours':
-          status = 'EnCours';
-          break;
-        case 'En retard':
-          lateOnly = true;
-          break;
-        case 'Brodé':
-          workType = 'Brode';
-          break;
-      }
-
+      final dates = _semesterDates;
       final data = await api.getOrders(
-        status: status,
-        lateOnly: lateOnly,
-        workType: workType,
+        status: _selectedStatus,
+        dateFrom: dates.$1,
+        dateTo: dates.$2,
       );
       setState(() {
         _orders = data['items'] ?? [];
         _loading = false;
       });
     } catch (e) {
-      setState(() {
-        _loading = false;
-        _error = e.toString();
-      });
+      setState(() { _loading = false; _error = e.toString(); });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final quarter = ((now.month - 1) ~/ 3) + 1;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(children: [
-          // Header
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('ARCHIVES DE L\'ATELIER', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
-              Text('Commandes — T$quarter ${now.year}', style: GoogleFonts.notoSerif(fontSize: 24, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 16),
+              Text('Commandes', style: GoogleFonts.notoSerif(fontSize: 24, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
 
-              // Filter chips
-              SizedBox(
-                height: 36,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _filters.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final selected = _filters[i] == _selectedFilter;
-                    return ChoiceChip(
-                      label: Text(_filters[i]),
-                      selected: selected,
-                      onSelected: (_) {
-                        if (_selectedFilter != _filters[i]) {
-                          setState(() => _selectedFilter = _filters[i]);
-                          _loadOrders();
-                        }
-                      },
-                      labelStyle: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? Colors.white : AppColors.onSurface),
-                    );
-                  },
+              // Semester + Status filters row
+              Row(children: [
+                // Semester dropdown
+                Expanded(
+                  child: Container(
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.outlineVariant),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _currentSemesterLabel,
+                        isExpanded: true,
+                        icon: const Icon(Icons.calendar_month, size: 18, color: AppColors.primary),
+                        style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                        items: _semesterOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                        onChanged: _onSemesterChanged,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                // Status dropdown
+                Expanded(
+                  child: Container(
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.outlineVariant),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedStatus,
+                        isExpanded: true,
+                        hint: Text('Tous les statuts', style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant)),
+                        icon: const Icon(Icons.filter_list, size: 18, color: AppColors.primary),
+                        style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                        items: [
+                          DropdownMenuItem<String>(value: null, child: Text('Tous les statuts', style: GoogleFonts.manrope(fontSize: 13))),
+                          ..._allStatuses.map((s) => DropdownMenuItem(
+                            value: s.$1,
+                            child: Row(children: [
+                              Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.statusColor(s.$1), shape: BoxShape.circle)),
+                              const SizedBox(width: 8),
+                              Text(s.$2, style: GoogleFonts.manrope(fontSize: 13)),
+                            ]),
+                          )),
+                        ],
+                        onChanged: (v) {
+                          setState(() => _selectedStatus = v);
+                          _loadOrders();
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ]),
               const SizedBox(height: 16),
             ]),
           ),
@@ -120,13 +183,13 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
                         child: Column(mainAxisSize: MainAxisSize.min, children: [
                           Text('Erreur de chargement', style: GoogleFonts.manrope(color: AppColors.error, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 8),
-                          TextButton(onPressed: _loadOrders, child: const Text('Réessayer')),
+                          TextButton(onPressed: _loadOrders, child: const Text('Reessayer')),
                         ]),
                       )
                     : _orders.isEmpty
                         ? Center(
                             child: Column(mainAxisSize: MainAxisSize.min, children: [
-                              Icon(Icons.inbox_outlined, size: 48, color: AppColors.onSurfaceVariant.withOpacity(0.4)),
+                              Icon(Icons.inbox_outlined, size: 48, color: AppColors.onSurfaceVariant.withValues(alpha: 0.4)),
                               const SizedBox(height: 12),
                               Text('Aucune commande', style: GoogleFonts.manrope(color: AppColors.onSurfaceVariant)),
                             ]),
@@ -154,14 +217,14 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
     final isLate = order['isLate'] == true;
     final clientName = order['clientName'] ?? _shortId(order['clientId']) ?? 'Client';
     return GestureDetector(
-      onTap: () => context.go('/orders/${order['id']}'),
+      onTap: () => context.push('/orders/${order['id']}'),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: isLate ? Border.all(color: AppColors.error.withOpacity(0.3), width: 1.5) : null,
-          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.03), blurRadius: 12, offset: const Offset(0, 4))],
+          border: isLate ? Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1.5) : null,
+          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 4))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -182,7 +245,7 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
                 child: Text('RETARD: ${order['delayDays']}J', style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
               ),
             ] else ...[
-              Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.onSurfaceVariant),
+              const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.onSurfaceVariant),
               const SizedBox(width: 4),
               Text(_formatDate(order['expectedDeliveryDate']), style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
             ],

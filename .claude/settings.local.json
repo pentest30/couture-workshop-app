@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(npx create-next-app@latest web --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(npx --yes create-next-app@latest web --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "Bash(npm install:*)",
+      "Bash(npx --yes shadcn@latest init -d --force)",
+      "Bash(npx shadcn@latest add table badge button input select dialog dropdown-menu card tabs -y)",
+      "Bash(find . -name \"*.tsx\" -exec sed -i -e 's/border-error/border-destructive/g' -e 's/bg-outline-variant/bg-border/g' -e 's/divide-outline-variant/divide-border/g' -e 's/var\\(--color-error\\)/var\\(--destructive\\)/g' -e 's/var\\(--color-secondary-fixed\\)/var\\(--chart-2\\)/g' -e 's/var\\(--color-secondary\\)/var\\(--chart-2\\)/g' -e 's/var\\(--color-primary\\)/var\\(--primary\\)/g' {} +)",
+      "Bash(dotnet run:*)"
+    ]
+  }
+}

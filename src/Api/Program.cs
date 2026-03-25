@@ -6,9 +6,23 @@ using Couture.Clients.Persistence;
 using Couture.Finance.Persistence;
 using Couture.Dashboard.Persistence;
 using Couture.Notifications.Persistence;
+using Couture.Catalog.Persistence;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+    .WriteTo.Console()
+    .WriteTo.File("logs/couture-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30)
+    .CreateLogger();
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 // Identity module (auth, JWT, roles, permissions)
 builder.Services.AddIdentityModule(builder.Configuration);
@@ -31,6 +45,9 @@ builder.Services.AddDbContext<DashboardDbContext>(options =>
 builder.Services.AddDbContext<NotificationsDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.AddDbContext<CatalogDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
 // Mediator (source-generated CQRS)
 builder.Services.AddMediator(options =>
 {
@@ -38,11 +55,13 @@ builder.Services.AddMediator(options =>
 });
 
 // Notifications services
+builder.Services.AddScoped<Couture.Notifications.Domain.IManagerResolver, Couture.Api.Services.ManagerResolver>();
 builder.Services.AddScoped<Couture.Notifications.Domain.NotificationService>();
 builder.Services.AddScoped<Couture.Notifications.Sms.ISmsGateway, Couture.Notifications.Sms.MockSmsGateway>();
 builder.Services.AddScoped<Couture.Notifications.Jobs.EvaluateOverdueOrdersJob>();
 builder.Services.AddScoped<Couture.Notifications.Jobs.EvaluateStalledOrdersJob>();
 builder.Services.AddScoped<Couture.Notifications.Jobs.PurgeExpiredNotificationsJob>();
+builder.Services.AddHostedService<Couture.Notifications.Jobs.NotificationJobScheduler>();
 builder.Services.AddSignalR();
 
 // CORS
@@ -62,6 +81,9 @@ builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
+// Static files for uploads
+app.UseStaticFiles();
+
 // Middleware
 app.UseCors();
 app.UseAuthentication();
@@ -76,6 +98,8 @@ app.MapClientEndpoints();
 app.MapFinanceEndpoints();
 app.MapDashboardEndpoints();
 app.MapNotificationEndpoints();
+app.MapCatalogEndpoints();
+app.MapUploadEndpoints();
 
 // Auto-migrate and seed in development
 if (app.Environment.IsDevelopment())
@@ -92,6 +116,7 @@ if (app.Environment.IsDevelopment())
     await services.GetRequiredService<FinanceDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<DashboardDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<NotificationsDbContext>().Database.MigrateAsync();
+    await services.GetRequiredService<CatalogDbContext>().Database.MigrateAsync();
 
     logger.LogInformation("Seeding data...");
 
@@ -106,7 +131,7 @@ if (app.Environment.IsDevelopment())
 
 app.Run();
 
-static async Task SeedSampleDataAsync(IServiceProvider services, ILogger logger)
+static async Task SeedSampleDataAsync(IServiceProvider services, Microsoft.Extensions.Logging.ILogger logger)
 {
     // Seed measurement fields
     var clientsDb = services.GetRequiredService<ClientsDbContext>();
@@ -227,5 +252,71 @@ static async Task SeedSampleDataAsync(IServiceProvider services, ILogger logger)
         }
         await ordersDb.SaveChangesAsync();
         logger.LogInformation("Seeded {Count} sample orders", orders.Length);
+    }
+
+    // Seed catalog
+    var catalogDb = services.GetRequiredService<CatalogDbContext>();
+    if (!await catalogDb.Models.AnyAsync())
+    {
+        var fabrics = new[]
+        {
+            Couture.Catalog.Domain.Fabric.Create("Satin duchesse", "Satin", "#1a237e", 3500m, 25, "Tissu Benali", "Satin lourd pour robes de cérémonie"),
+            Couture.Catalog.Domain.Fabric.Create("Velours bordeaux", "Velours", "#7f0000", 4200m, 18, "Tissu Benali", "Velours épais pour caftans"),
+            Couture.Catalog.Domain.Fabric.Create("Mousseline ivoire", "Mousseline", "#fffde7", 2800m, 30, "Tissu El Djazair", "Mousseline légère pour voiles et superpositions"),
+            Couture.Catalog.Domain.Fabric.Create("Brocart doré", "Brocart", "#f9a825", 5500m, 12, "Import Istanbul", "Brocart à motifs floraux dorés"),
+            Couture.Catalog.Domain.Fabric.Create("Organza champagne", "Organza", "#fff8e1", 3000m, 20, "Tissu El Djazair", "Organza transparent pour superpositions"),
+            Couture.Catalog.Domain.Fabric.Create("Taffetas émeraude", "Taffetas", "#1b5e20", 3200m, 15, "Tissu Benali"),
+            Couture.Catalog.Domain.Fabric.Create("Dentelle française", "Dentelle", "#f5f5f5", 6000m, 8, "Import Paris", "Dentelle de Calais pour finitions"),
+            Couture.Catalog.Domain.Fabric.Create("Crêpe de Chine", "Crêpe", "#e0e0e0", 2500m, 22, "Tissu El Djazair"),
+        };
+        catalogDb.Fabrics.AddRange(fabrics);
+        await catalogDb.SaveChangesAsync();
+        logger.LogInformation("Seeded {Count} fabrics", fabrics.Length);
+
+        var models = new[]
+        {
+            Couture.Catalog.Domain.Model.Create("MOD-2026-0001", "Caftan Cérémonie Classique",
+                Couture.Catalog.Domain.ModelCategory.Ceremonie, "Brode", 25000m, 14, true,
+                "Caftan brodé traditionnel pour cérémonies. Broderie au fil doré sur velours, manches évasées, ceinture intégrée."),
+            Couture.Catalog.Domain.Model.Create("MOD-2026-0002", "Karakou Mariée",
+                Couture.Catalog.Domain.ModelCategory.Mariee, "Mixte", 55000m, 21, true,
+                "Karakou complet pour mariée. Broderie fetla + perlage intégral. Veste + jupe + seroual. Tissu velours + brocart."),
+            Couture.Catalog.Domain.Model.Create("MOD-2026-0003", "Robe de Soirée Simple",
+                Couture.Catalog.Domain.ModelCategory.Ceremonie, "Simple", 12000m, 5, true,
+                "Robe de soirée élégante en satin. Coupe droite, fente latérale, dos nu. Idéale pour invitées de mariage."),
+            Couture.Catalog.Domain.Model.Create("MOD-2026-0004", "Blousa Oranaise Brodée",
+                Couture.Catalog.Domain.ModelCategory.Traditionnel, "Brode", 35000m, 18, true,
+                "Blousa traditionnelle d'Oran avec broderie dorée sur velours. Col montant, manches longues évasées."),
+            Couture.Catalog.Domain.Model.Create("MOD-2026-0005", "Robe Perlée Soirée",
+                Couture.Catalog.Domain.ModelCategory.Moderne, "Perle", 30000m, 12, true,
+                "Robe longue perlée moderne. Perles et cristaux sur mousseline. Coupe sirène, décolleté en V."),
+            Couture.Catalog.Domain.Model.Create("MOD-2026-0006", "Gandoura Quotidienne",
+                Couture.Catalog.Domain.ModelCategory.Quotidien, "Simple", 8000m, 3, true,
+                "Gandoura confortable pour la maison. Tissu crêpe, coupe ample, finitions soignées."),
+            Couture.Catalog.Domain.Model.Create("MOD-2026-0007", "Caftan Moderne Perlé",
+                Couture.Catalog.Domain.ModelCategory.Moderne, "Mixte", 42000m, 18, true,
+                "Caftan contemporain avec broderie légère et perlage sur les manches et le col. Tissu organza et satin."),
+            Couture.Catalog.Domain.Model.Create("MOD-2026-0008", "Jebba Fergani",
+                Couture.Catalog.Domain.ModelCategory.Traditionnel, "Brode", 45000m, 20, true,
+                "Jebba constantinoise traditionnelle. Broderie fetla complète, col rond fermé, tissu velours."),
+        };
+        // Link fabrics before saving
+        models[0].LinkFabric(fabrics[1].Id);
+        models[0].LinkFabric(fabrics[3].Id);
+        models[1].LinkFabric(fabrics[1].Id);
+        models[1].LinkFabric(fabrics[3].Id);
+        models[1].LinkFabric(fabrics[6].Id);
+        models[2].LinkFabric(fabrics[0].Id);
+        models[3].LinkFabric(fabrics[1].Id);
+        models[4].LinkFabric(fabrics[2].Id);
+        models[5].LinkFabric(fabrics[7].Id);
+        models[6].LinkFabric(fabrics[4].Id);
+        models[6].LinkFabric(fabrics[0].Id);
+        models[7].LinkFabric(fabrics[1].Id);
+        models[7].LinkFabric(fabrics[3].Id);
+
+        catalogDb.Models.AddRange(models);
+        await catalogDb.SaveChangesAsync();
+        logger.LogInformation("Seeded {Count} catalog models with fabric links", models.Length);
     }
 }

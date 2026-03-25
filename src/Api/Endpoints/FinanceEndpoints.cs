@@ -1,9 +1,14 @@
+using Couture.Clients.Persistence;
+using Couture.Finance.Features.DownloadReceipt;
 using Couture.Finance.Features.GetFinancialSummary;
 using Couture.Finance.Features.GetPayments;
 using Couture.Finance.Features.RecordPayment;
+using Couture.Finance.Persistence;
 using Couture.Identity.Contracts;
+using Couture.Orders.Persistence;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Couture.Api.Endpoints;
 
@@ -18,6 +23,9 @@ public static class FinanceEndpoints
 
         group.MapGet("/orders/{orderId:guid}/payments", GetPayments)
             .RequireAuthorization(CouturePermissions.FinanceView);
+
+        group.MapGet("/finance/receipts/{paymentId:guid}/pdf", DownloadReceiptPdf)
+            .AllowAnonymous();
 
         group.MapGet("/finance/summary", GetFinancialSummary)
             .RequireAuthorization(CouturePermissions.FinanceView);
@@ -47,6 +55,56 @@ public static class FinanceEndpoints
     {
         var result = await mediator.Send(new GetPaymentsQuery(orderId));
         return Results.Ok(result);
+    }
+
+    private static async Task<IResult> DownloadReceiptPdf(
+        Guid paymentId,
+        FinanceDbContext financeDb,
+        OrdersDbContext ordersDb,
+        ClientsDbContext clientsDb)
+    {
+        var pid = Couture.Finance.Contracts.PaymentId.From(paymentId);
+        var payment = await financeDb.Payments
+            .AsNoTracking()
+            .Include(p => p.Receipt)
+            .FirstOrDefaultAsync(p => p.Id == pid);
+
+        if (payment?.Receipt is null)
+            return Results.NotFound(new { error = "Receipt not found." });
+
+        var oid = Couture.Orders.Contracts.OrderId.From(payment.OrderId);
+        var order = await ordersDb.Orders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == oid);
+
+        if (order is null)
+            return Results.NotFound(new { error = "Order not found." });
+
+        var cid = Couture.Clients.Contracts.ClientId.From(order.ClientId);
+        var client = await clientsDb.Clients
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == cid);
+
+        var totalPaid = await financeDb.Payments
+            .Where(p => p.OrderId == payment.OrderId)
+            .SumAsync(p => p.Amount);
+
+        var pdfData = new ReceiptPdfData(
+            payment.Receipt.Code,
+            order.Code,
+            client is not null ? $"{client.FirstName} {client.LastName}" : "—",
+            payment.Amount,
+            payment.PaymentMethod.Label,
+            payment.PaymentDate,
+            payment.Note,
+            order.TotalPrice,
+            totalPaid,
+            order.TotalPrice - totalPaid,
+            payment.Receipt.GeneratedAt);
+
+        var pdfBytes = ReceiptPdfGenerator.Generate(pdfData);
+
+        return Results.File(pdfBytes, "application/pdf", $"{payment.Receipt.Code}.pdf");
     }
 
     private static async Task<IResult> GetFinancialSummary(

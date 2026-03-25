@@ -71,6 +71,7 @@ public sealed class GetOrderHandler : IQueryHandler<GetOrderQuery, OrderDetailDt
             delayDays, isLate,
             order.AssignedTailorId, order.AssignedEmbroidererId, order.AssignedBeaderId,
             order.HasUnpaidBalance,
+            order.CatalogModelId,
             timeline,
             order.Photos.Select(p => new PhotoDto(p.Id.Value, p.FileName, p.StoragePath, p.UploadedAt)).ToList(),
             order.CreatedAt);

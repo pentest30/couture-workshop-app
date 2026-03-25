@@ -25,6 +25,11 @@ public static class ClientEndpoints
         group.MapPut("/{id:guid}", UpdateClient).RequireAuthorization(CouturePermissions.ClientsUpdate);
         group.MapGet("/{id:guid}/measurements", GetMeasurementHistory).RequireAuthorization(CouturePermissions.ClientsView);
         group.MapPost("/{id:guid}/measurements", RecordMeasurements).RequireAuthorization(CouturePermissions.ClientsCreate);
+        group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator) =>
+        {
+            try { await mediator.Send(new Couture.Clients.Features.DeactivateClient.DeactivateClientCommand(id)); return Results.NoContent(); }
+            catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+        }).RequireAuthorization(CouturePermissions.ClientsUpdate);
 
         var fields = app.MapGroup("/api/measurement-fields").WithTags("Measurement Fields")
             .RequireAuthorization(CouturePermissions.SettingsManage);

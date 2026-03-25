@@ -21,5 +21,8 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(c => c.SecondaryPhone).HasMaxLength(20);
         builder.Property(c => c.Address).HasMaxLength(500);
         builder.Property(c => c.Notes).HasMaxLength(2000);
+
+        builder.Property(c => c.IsActive).HasDefaultValue(true);
+        builder.HasQueryFilter(c => c.IsActive);
     }
 }

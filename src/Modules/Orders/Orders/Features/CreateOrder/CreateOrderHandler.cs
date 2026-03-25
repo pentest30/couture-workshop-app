@@ -33,7 +33,8 @@ public sealed class CreateOrderHandler : ICommandHandler<CreateOrderCommand, Cre
             technicalNotes: command.TechnicalNotes,
             assignedTailorId: command.AssignedTailorId,
             assignedEmbroidererId: command.AssignedEmbroidererId,
-            assignedBeaderId: command.AssignedBeaderId);
+            assignedBeaderId: command.AssignedBeaderId,
+            catalogModelId: command.CatalogModelId);
 
         _db.Orders.Add(order);
         await _db.SaveChangesAsync(ct);

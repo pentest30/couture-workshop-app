@@ -2,6 +2,7 @@ using Couture.Identity.Contracts;
 using Couture.Notifications.Features.ConfigureAlerts;
 using Couture.Notifications.Features.GetSmsLogs;
 using Couture.Notifications.Features.GetUnreadCount;
+using Couture.Notifications.Features.ListConfigs;
 using Couture.Notifications.Features.ListNotifications;
 using Couture.Notifications.Features.MarkRead;
 using Mediator;
@@ -24,6 +25,7 @@ public static class NotificationEndpoints
         var admin = app.MapGroup("/api/notifications/admin").WithTags("Notifications Admin")
             .RequireAuthorization(CouturePermissions.NotificationsConfigure);
 
+        admin.MapGet("/configs", ListConfigs);
         admin.MapPut("/config/{typeValue:int}", ConfigureAlerts);
         admin.MapGet("/sms-logs", GetSmsLogs);
     }
@@ -54,6 +56,12 @@ public static class NotificationEndpoints
     {
         await mediator.Send(new MarkAllReadCommand(currentUser.UserId));
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> ListConfigs(IMediator mediator)
+    {
+        var result = await mediator.Send(new ListConfigsQuery());
+        return Results.Ok(result);
     }
 
     private static async Task<IResult> ConfigureAlerts(

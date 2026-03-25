@@ -6,4 +6,5 @@ public abstract class AuditableEntity
     public string? CreatedBy { get; set; }
     public DateTimeOffset? LastModifiedAt { get; set; }
     public string? LastModifiedBy { get; set; }
+    public bool IsActive { get; set; } = true;
 }

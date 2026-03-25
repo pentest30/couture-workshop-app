@@ -89,6 +89,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: SingleChildScrollView(
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
         const SizedBox(height: 20),
@@ -164,6 +165,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
           ),
         ),
       ]),
+      ),
     );
   }
 }

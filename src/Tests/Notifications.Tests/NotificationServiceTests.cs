@@ -13,7 +13,7 @@ public class NotificationServiceTests
     {
         var (db, _) = TestDbHelper.Create();
         var sms = new MockSmsGateway(NullLogger<MockSmsGateway>.Instance);
-        var service = new NotificationService(db, sms, NullLogger<NotificationService>.Instance);
+        var service = new NotificationService(db, sms, new NullHubContext(), new NullManagerResolver(), NullLogger<NotificationService>.Instance);
 
         await service.CreateAndSendAsync(NotificationType.N01_Overdue, Guid.NewGuid(), Guid.NewGuid(),
             "Test title", "Test message");
@@ -36,7 +36,7 @@ public class NotificationServiceTests
         await db.SaveChangesAsync();
 
         var sms = new MockSmsGateway(NullLogger<MockSmsGateway>.Instance);
-        var service = new NotificationService(db, sms, NullLogger<NotificationService>.Instance);
+        var service = new NotificationService(db, sms, new NullHubContext(), new NullManagerResolver(), NullLogger<NotificationService>.Instance);
 
         await service.CreateAndSendAsync(NotificationType.N01_Overdue, Guid.NewGuid(), Guid.NewGuid(),
             "Test", "Test message");
@@ -49,7 +49,7 @@ public class NotificationServiceTests
     {
         var (db, _) = TestDbHelper.Create();
         var sms = new MockSmsGateway(NullLogger<MockSmsGateway>.Instance);
-        var service = new NotificationService(db, sms, NullLogger<NotificationService>.Instance);
+        var service = new NotificationService(db, sms, new NullHubContext(), new NullManagerResolver(), NullLogger<NotificationService>.Instance);
 
         await service.CreateAndSendAsync(NotificationType.N07_Assigned, Guid.NewGuid(), Guid.NewGuid(),
             "Assignation", "Commande assignée", "0550123456");

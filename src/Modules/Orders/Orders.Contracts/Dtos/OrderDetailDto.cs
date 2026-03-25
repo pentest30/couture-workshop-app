@@ -31,6 +31,7 @@ public sealed record OrderDetailDto(
     Guid? AssignedEmbroidererId,
     Guid? AssignedBeaderId,
     bool HasUnpaidBalance,
+    Guid? CatalogModelId,
     List<TimelineEntryDto> Timeline,
     List<PhotoDto> Photos,
     DateTimeOffset CreatedAt);

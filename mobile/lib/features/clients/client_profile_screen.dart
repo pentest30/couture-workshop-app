@@ -161,7 +161,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
                 final isLate = o['isLate'] == true;
                 final balance = ((o['outstandingBalance'] as num?) ?? 0).toDouble();
                 return GestureDetector(
-                  onTap: () => context.go('/orders/${o['id']}'),
+                  onTap: () => context.push('/orders/${o['id']}'),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(12),

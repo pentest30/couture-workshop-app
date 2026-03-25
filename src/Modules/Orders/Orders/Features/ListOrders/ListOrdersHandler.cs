@@ -25,7 +25,16 @@ public sealed class ListOrdersHandler : IQueryHandler<ListOrdersQuery, PagedResu
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim().ToLower();
-            q = q.Where(o => o.Code.ToLower().Contains(search));
+            // Find matching client IDs by name/code
+            var matchingClientIds = await _clientsDb.Clients
+                .AsNoTracking()
+                .Where(c => c.FirstName.ToLower().Contains(search)
+                    || c.LastName.ToLower().Contains(search)
+                    || c.Code.ToLower().Contains(search))
+                .Select(c => c.Id.Value)
+                .ToListAsync(ct);
+
+            q = q.Where(o => o.Code.ToLower().Contains(search) || matchingClientIds.Contains(o.ClientId));
         }
 
         if (query.ClientId.HasValue)

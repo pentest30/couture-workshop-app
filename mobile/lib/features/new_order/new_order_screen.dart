@@ -28,6 +28,11 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
   String? _stepError;
   Timer? _debounce;
 
+  // Catalog model
+  Map<String, dynamic>? _selectedModel;
+  List<dynamic> _catalogModels = [];
+  bool _loadingCatalog = false;
+
   // New client form
   bool _showNewClientForm = false;
   final _newFirstNameController = TextEditingController();
@@ -53,6 +58,97 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
     _embroideryDescController.dispose();
     _beadingDescController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCatalogModels() async {
+    setState(() => _loadingCatalog = true);
+    try {
+      final api = ref.read(apiClientProvider);
+      final data = await api.getCatalogModels();
+      setState(() { _catalogModels = data['items'] ?? []; _loadingCatalog = false; });
+    } catch (_) {
+      setState(() => _loadingCatalog = false);
+    }
+  }
+
+  void _applyModel(Map<String, dynamic> model) {
+    setState(() {
+      _selectedModel = model;
+      _workType = model['workType'] ?? 'Simple';
+      _descController.text = model['name'] ?? '';
+      _priceController.text = (model['basePrice'] ?? 0).toString();
+    });
+  }
+
+  void _clearModel() {
+    setState(() {
+      _selectedModel = null;
+      _workType = 'Simple';
+      _descController.clear();
+      _priceController.clear();
+    });
+  }
+
+  Future<void> _showCatalogPicker() async {
+    await _loadCatalogModels();
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 16),
+          Text('Choisir un modele', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          Expanded(
+            child: _catalogModels.isEmpty
+                ? Center(child: Text('Aucun modele dans le catalogue', style: GoogleFonts.manrope(color: AppColors.onSurfaceVariant)))
+                : ListView.separated(
+                    itemCount: _catalogModels.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, i) {
+                      final m = _catalogModels[i] as Map<String, dynamic>;
+                      return GestureDetector(
+                        onTap: () {
+                          _applyModel(m);
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(children: [
+                            Container(
+                              width: 48, height: 48,
+                              decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
+                              child: const Icon(Icons.auto_stories, color: AppColors.onSurfaceVariant, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(m['name'] ?? '', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600)),
+                              Text('${m['categoryLabel'] ?? ''} — ${m['workType'] ?? ''}', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                            ])),
+                            Text('${m['basePrice'] ?? 0} DZD', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.secondary)),
+                          ]),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ]),
+      ),
+    );
   }
 
   void _onSearchChanged(String query) {
@@ -172,6 +268,7 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
       if (_fabricController.text.isNotEmpty) data['fabric'] = _fabricController.text;
       if (_embroideryDescController.text.isNotEmpty) data['embroideryDescription'] = _embroideryDescController.text;
       if (_beadingDescController.text.isNotEmpty) data['beadingDescription'] = _beadingDescController.text;
+      if (_selectedModel != null) data['catalogModelId'] = _selectedModel!['id'];
 
       await api.createOrder(data);
       if (mounted) {
@@ -422,7 +519,38 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
     return ListView(children: [
       const SizedBox(height: 4),
       Text('Details du Travail', style: GoogleFonts.notoSerif(fontSize: 20, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 4),
+      const SizedBox(height: 12),
+
+      // Catalog model picker
+      if (_selectedModel != null)
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(color: AppColors.secondary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2))),
+          child: Row(children: [
+            const Icon(Icons.auto_stories, size: 20, color: AppColors.secondary),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(_selectedModel!['name'] ?? '', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text('${_selectedModel!['categoryLabel'] ?? ''} — ${_selectedModel!['basePrice'] ?? 0} DZD', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
+            ])),
+            GestureDetector(onTap: _clearModel, child: const Icon(Icons.close, size: 18, color: AppColors.onSurfaceVariant)),
+          ]),
+        )
+      else
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: OutlinedButton.icon(
+            onPressed: () => _showCatalogPicker(),
+            icon: const Icon(Icons.auto_stories, size: 18),
+            label: Text('Choisir un modele du catalogue', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+
       Text('TYPE DE CONFECTION', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
       const SizedBox(height: 12),
       Wrap(spacing: 10, runSpacing: 10, children: types.map((t) {

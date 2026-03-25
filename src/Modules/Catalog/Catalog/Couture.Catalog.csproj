@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Catalog.Contracts/Couture.Catalog.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Ardalis.SmartEnum" />
+    <PackageReference Include="Ardalis.SmartEnum.EFCore" />
+    <PackageReference Include="Mediator.Abstractions" />
+  </ItemGroup>
+</Project>

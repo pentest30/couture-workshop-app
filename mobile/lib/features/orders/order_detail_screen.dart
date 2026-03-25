@@ -106,42 +106,89 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             Text(o['code'] ?? '', style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant)),
             const SizedBox(height: 20),
 
-            // Dates row
-            Row(children: [
-              _infoChip(Icons.calendar_today_outlined, _formatDate(o['receptionDate'])),
-              const SizedBox(width: 12),
-              _infoChip(Icons.flag_outlined, _formatDate(o['expectedDeliveryDate'])),
-            ]),
-
-            // Actual delivery date if present
-            if (o['actualDeliveryDate'] != null) ...[
-              const SizedBox(height: 8),
-              _infoChip(Icons.check_circle_outline, 'Livr\u00e9e: ${_formatDate(o['actualDeliveryDate'])}'),
+            // Late alert
+            if (o['isLate'] == true) ...[
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppColors.error.withAlpha(20), borderRadius: BorderRadius.circular(10)),
+                child: Row(children: [
+                  const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 18),
+                  const SizedBox(width: 8),
+                  Text('En retard de ${o['delayDays'] ?? 0} jour(s)', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.error)),
+                ]),
+              ),
+              const SizedBox(height: 16),
             ],
-            const SizedBox(height: 20),
+
+            // Dates section
+            _sectionTitle('Dates'),
+            const SizedBox(height: 8),
+            _detailRow('Reception', _formatDate(o['receptionDate'])),
+            _detailRow('Livraison prevue', _formatDate(o['expectedDeliveryDate'])),
+            if (o['actualDeliveryDate'] != null)
+              _detailRow('Livraison reelle', _formatDate(o['actualDeliveryDate'])),
+            const SizedBox(height: 16),
 
             // Artisan info
-            if (o['assignedArtisanId'] != null || o['assignedEmbroidererId'] != null || o['assignedBeaderId'] != null) ...[
-              _buildArtisanSection(o),
+            if (o['assignedTailorId'] != null || o['assignedEmbroidererId'] != null || o['assignedBeaderId'] != null) ...[
+              _sectionTitle('Artisans assignes'),
+              const SizedBox(height: 8),
+              if (o['assignedTailorId'] != null)
+                _detailRow('Couturier(e)', _shortId(o['assignedTailorId']) ?? ''),
+              if (o['assignedEmbroidererId'] != null)
+                _detailRow('Brodeur(se)', _shortId(o['assignedEmbroidererId']) ?? ''),
+              if (o['assignedBeaderId'] != null)
+                _detailRow('Perleur(se)', _shortId(o['assignedBeaderId']) ?? ''),
               const SizedBox(height: 16),
             ],
 
             const GoldDivider(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Description
-            if (o['description'] != null && (o['description'] as String).isNotEmpty) ...[
-              Text(o['description'], style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface, height: 1.5)),
-              const SizedBox(height: 20),
+            // Description & fabric
+            _sectionTitle('Details de la commande'),
+            const SizedBox(height: 8),
+            _detailRow('Type de travail', o['workTypeLabel'] ?? o['workType'] ?? ''),
+            if (o['description'] != null && (o['description'] as String).isNotEmpty)
+              _detailRow('Description', o['description']),
+            if (o['fabric'] != null && (o['fabric'] as String).isNotEmpty)
+              _detailRow('Tissu', o['fabric']),
+            if (o['technicalNotes'] != null && (o['technicalNotes'] as String).isNotEmpty)
+              _detailRow('Notes techniques', o['technicalNotes']),
+            const SizedBox(height: 12),
+
+            // Embroidery details
+            if (_hasEmbroideryDetails(o)) ...[
+              _sectionTitle('Details broderie'),
+              const SizedBox(height: 8),
+              if (o['embroideryStyle'] != null)
+                _detailRow('Style', o['embroideryStyle']),
+              if (o['threadColors'] != null)
+                _detailRow('Couleurs fils', o['threadColors']),
+              if (o['density'] != null)
+                _detailRow('Densite', o['density']),
+              if (o['embroideryZone'] != null)
+                _detailRow('Zone', o['embroideryZone']),
+              const SizedBox(height: 12),
             ],
 
-            // Work-type-specific fields
-            _buildWorkTypeDetails(o),
+            // Beading details
+            if (_hasBeadingDetails(o)) ...[
+              _sectionTitle('Details perlage'),
+              const SizedBox(height: 8),
+              if (o['beadType'] != null)
+                _detailRow('Type de perle', o['beadType']),
+              if (o['arrangement'] != null)
+                _detailRow('Arrangement', o['arrangement']),
+              if (o['affectedZones'] != null)
+                _detailRow('Zones concernees', o['affectedZones']),
+              const SizedBox(height: 12),
+            ],
 
             // Photos
             if (photos.isNotEmpty) ...[
               Row(children: [
-                Icon(Icons.photo_library_outlined, size: 16, color: AppColors.onSurfaceVariant),
+                const Icon(Icons.photo_library_outlined, size: 16, color: AppColors.onSurfaceVariant),
                 const SizedBox(width: 6),
                 Text('${photos.length} photo${photos.length > 1 ? 's' : ''}', style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
               ]),
@@ -287,42 +334,17 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
   }
 
-  Widget _buildArtisanSection(Map<String, dynamic> o) {
-    final artisans = <Widget>[];
-    if (o['assignedArtisanId'] != null) {
-      artisans.add(_infoChip(Icons.person_outline, 'Artisan: ${_shortId(o['assignedArtisanId']) ?? ''}'));
-    }
-    if (o['assignedEmbroidererId'] != null) {
-      artisans.add(_infoChip(Icons.brush_outlined, 'Brodeur: ${_shortId(o['assignedEmbroidererId']) ?? ''}'));
-    }
-    if (o['assignedBeaderId'] != null) {
-      artisans.add(_infoChip(Icons.diamond_outlined, 'Perleur: ${_shortId(o['assignedBeaderId']) ?? ''}'));
-    }
-    return Wrap(spacing: 8, runSpacing: 8, children: artisans);
+  bool _hasEmbroideryDetails(Map<String, dynamic> o) {
+    return o['embroideryStyle'] != null || o['threadColors'] != null
+        || o['density'] != null || o['embroideryZone'] != null;
   }
 
-  Widget _buildWorkTypeDetails(Map<String, dynamic> o) {
-    final details = <Widget>[];
-    if (o['embroideryStyle'] != null) {
-      details.add(_detailRow('Style broderie', o['embroideryStyle']));
-    }
-    if (o['beadType'] != null) {
-      details.add(_detailRow('Type de perle', o['beadType']));
-    }
-    if (o['fabricType'] != null) {
-      details.add(_detailRow('Type de tissu', o['fabricType']));
-    }
-    if (o['measurements'] != null) {
-      details.add(_detailRow('Mesures', o['measurements']));
-    }
-    if (details.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...details,
-        const SizedBox(height: 16),
-      ],
-    );
+  bool _hasBeadingDetails(Map<String, dynamic> o) {
+    return o['beadType'] != null || o['arrangement'] != null || o['affectedZones'] != null;
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(title.toUpperCase(), style: GoogleFonts.manrope(fontSize: 11, letterSpacing: 1.2, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w700));
   }
 
   Widget _detailRow(String label, String value) {

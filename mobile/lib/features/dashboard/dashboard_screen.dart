@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/providers.dart';
 import '../../core/widgets/status_badge.dart';
-import '../../core/widgets/work_type_badge.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -19,9 +18,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _loading = true;
   String? _error;
 
+  late int _selectedYear;
+  late int _selectedSemester; // 1 or 2
+
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _selectedYear = now.year;
+    _selectedSemester = now.month <= 6 ? 1 : 2;
+    _loadData();
+  }
+
+  String get _currentSemesterLabel => 'S$_selectedSemester $_selectedYear';
+
+  List<String> get _semesterOptions {
+    final now = DateTime.now();
+    final options = <String>[];
+    for (var y = now.year; y >= now.year - 2; y--) {
+      options.add('S1 $y');
+      options.add('S2 $y');
+    }
+    return options;
+  }
+
+  void _onSemesterChanged(String? value) {
+    if (value == null) return;
+    final parts = value.split(' ');
+    setState(() {
+      _selectedSemester = int.parse(parts[0].substring(1));
+      _selectedYear = int.parse(parts[1]);
+    });
     _loadData();
   }
 
@@ -29,23 +56,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final api = ref.read(apiClientProvider);
-      final now = DateTime.now();
-      final quarter = ((now.month - 1) ~/ 3) + 1;
+      final q1 = _selectedSemester == 1 ? 1 : 3;
+      final dateFrom = _selectedSemester == 1 ? '$_selectedYear-01-01' : '$_selectedYear-07-01';
+      final dateTo = _selectedSemester == 1 ? '$_selectedYear-06-30' : '$_selectedYear-12-31';
 
-      final results = await Future.wait([
-        api.getKPIs(now.year, quarter),
-        api.getOrders(page: 1),
-      ]);
+      // Load KPIs for Q1 only (faster, less prone to failure)
+      Map<String, dynamic>? kpiData;
+      try {
+        kpiData = await api.getKPIs(_selectedYear, q1).timeout(const Duration(seconds: 10));
+      } catch (_) { kpiData = null; }
 
+      // Load recent orders
+      List<dynamic> recentItems = [];
+      try {
+        final ordersData = await api.getOrders(page: 1, dateFrom: dateFrom, dateTo: dateTo).timeout(const Duration(seconds: 10));
+        recentItems = (ordersData['items'] as List? ?? []).take(5).toList();
+      } catch (_) {}
+
+      if (!mounted) return;
       setState(() {
-        _kpis = results[0] as Map<String, dynamic>;
-        final ordersData = results[1] as Map<String, dynamic>;
-        _recentOrders = (ordersData['items'] as List? ?? []).take(5).toList();
+        _kpis = kpiData;
+        _recentOrders = recentItems;
         _loading = false;
       });
     } catch (e) {
       setState(() { _error = e.toString(); _loading = false; });
     }
+  }
+
+  double _avgRate(dynamic a, dynamic b) {
+    final va = (a ?? 0 as num).toDouble();
+    final vb = (b ?? 0 as num).toDouble();
+    if (va == 0 && vb == 0) return 0;
+    return (va + vb) / 2;
   }
 
   @override
@@ -64,7 +107,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     const SizedBox(height: 8),
                     Text(_error!, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant), textAlign: TextAlign.center),
                     const SizedBox(height: 16),
-                    ElevatedButton(onPressed: _loadData, child: const Text('Réessayer')),
+                    ElevatedButton(onPressed: _loadData, child: const Text('Reessayer')),
                   ]))
                 : RefreshIndicator(
                     onRefresh: _loadData,
@@ -73,7 +116,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                       children: [
                         _buildHeader(name),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
+                        _buildSemesterSelector(),
+                        const SizedBox(height: 16),
                         if ((_kpis?['lateOrders'] ?? 0) > 0) ...[_buildLateAlert(), const SizedBox(height: 16)],
                         _buildKPIGrid(),
                         const SizedBox(height: 16),
@@ -99,10 +144,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text("L'Atelier Couture", style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant, letterSpacing: 1.5, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
-        Text('Bonjour, ${name.split(' ').first} ✨', style: GoogleFonts.notoSerif(fontSize: 22, fontWeight: FontWeight.w600)),
+        Text('Bonjour, ${name.split(' ').first}', style: GoogleFonts.notoSerif(fontSize: 22, fontWeight: FontWeight.w600)),
       ])),
       CircleAvatar(backgroundColor: AppColors.primaryContainer, radius: 22, child: Text(name.isNotEmpty ? name[0] : '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18))),
     ]);
+  }
+
+  Widget _buildSemesterSelector() {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _currentSemesterLabel,
+          isExpanded: true,
+          icon: const Icon(Icons.calendar_month, size: 20, color: AppColors.primary),
+          style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+          items: _semesterOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+          onChanged: _onSemesterChanged,
+        ),
+      ),
+    );
   }
 
   Widget _buildLateAlert() {
@@ -114,7 +181,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: Row(children: [
           const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 20),
           const SizedBox(width: 10),
-          Expanded(child: Text('${_kpis!['lateOrders']} commande(s) dépassent le délai', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.error))),
+          Expanded(child: Text('${_kpis!['lateOrders']} commande(s) depassent le delai', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.error))),
           const Icon(Icons.chevron_right, color: AppColors.error, size: 18),
         ]),
       ),
@@ -125,7 +192,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Row(children: [
       Expanded(child: _kpiCard('Commandes', '${_kpis?['totalOrders'] ?? 0}', AppColors.primary, Icons.receipt_long)),
       const SizedBox(width: 10),
-      Expanded(child: _kpiCard('Livrées', '${_kpis?['deliveredOrders'] ?? 0}', AppColors.statusPrete, Icons.check_circle_outline)),
+      Expanded(child: _kpiCard('Livrees', '${_kpis?['deliveredOrders'] ?? 0}', AppColors.statusPrete, Icons.check_circle_outline)),
       const SizedBox(width: 10),
       Expanded(child: _kpiCard('En retard', '${_kpis?['lateOrders'] ?? 0}', AppColors.error, Icons.schedule)),
     ]);
@@ -168,17 +235,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(color: AppColors.statusPrete.withAlpha(25), borderRadius: BorderRadius.circular(10)),
-            child: Text('${onTimeRate.toStringAsFixed(0)}% à temps', style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.statusPrete)),
+            child: Text('${onTimeRate.toStringAsFixed(0)}% a temps', style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.statusPrete)),
           ),
         ]),
-        Text('CA encaissé ce trimestre', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
+        Text('CA encaisse ce semestre', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
         const SizedBox(height: 12),
         Row(children: [
           _miniStat('Soldes dus', _formatDZD(outstanding), AppColors.secondary),
           const SizedBox(width: 16),
-          _miniStat('Brodées', '$embroidered', AppColors.statusBroderie),
+          _miniStat('Brodees', '$embroidered', AppColors.statusBroderie),
           const SizedBox(width: 16),
-          _miniStat('Perlées', '$beaded', AppColors.statusPerlage),
+          _miniStat('Perlees', '$beaded', AppColors.statusPerlage),
         ]),
       ]),
     );
@@ -193,7 +260,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildRecentOrdersHeader() {
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text('Commandes Récentes', style: GoogleFonts.notoSerif(fontSize: 17, fontWeight: FontWeight.w600)),
+      Text('Commandes Recentes', style: GoogleFonts.notoSerif(fontSize: 17, fontWeight: FontWeight.w600)),
       GestureDetector(
         onTap: () => context.go('/orders'),
         child: Text('TOUT VOIR', style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1, color: AppColors.secondary)),
@@ -205,7 +272,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final o = order as Map<String, dynamic>;
     final isLate = o['isLate'] == true;
     return GestureDetector(
-      onTap: () => context.go('/orders/${o['id']}'),
+      onTap: () => context.push('/orders/${o['id']}'),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

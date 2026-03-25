@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/api/api_client.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -24,6 +23,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final api = ref.read(apiClientProvider);
       final data = await api.login(_emailController.text, _passwordController.text);
       ref.read(authStateProvider.notifier).state = data;
+
+      // Connect SignalR for real-time notifications
+      final token = data['accessToken'] as String?;
+      if (token != null) {
+        final signalR = ref.read(signalRServiceProvider);
+        signalR.connect(token);
+
+        // Listen for pushes and update the global unread count
+        signalR.onNotificationReceived.listen((_) {
+          ref.read(unreadCountProvider.notifier).state++;
+        });
+
+        // Seed the initial unread count
+        try {
+          final count = await api.getUnreadCount();
+          ref.read(unreadCountProvider.notifier).state = count;
+        } catch (_) {}
+      }
+
       if (mounted) context.go('/');
     } catch (e) {
       final msg = e.toString();

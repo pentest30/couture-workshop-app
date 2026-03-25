@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,13 +17,33 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   int _unreadCount = 0;
   bool _loading = true;
   String? _error;
-  String _filter = 'all';
+  String _filter = 'unread';
   bool _markingAllRead = false;
+  StreamSubscription<Map<String, dynamic>>? _signalRSub;
 
   @override
   void initState() {
     super.initState();
     _load();
+
+    // Listen for real-time notification pushes
+    final signalR = ref.read(signalRServiceProvider);
+    _signalRSub = signalR.onNotificationReceived.listen((payload) {
+      if (mounted) {
+        setState(() {
+          _notifications.insert(0, payload);
+          _unreadCount++;
+        });
+        // Sync global badge
+        ref.read(unreadCountProvider.notifier).state = _unreadCount;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _signalRSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -41,6 +62,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           _unreadCount = unread;
           _loading = false;
         });
+        // Sync global badge count
+        ref.read(unreadCountProvider.notifier).state = unread;
       }
     } catch (e) {
       if (mounted) setState(() { _loading = false; _error = 'Impossible de charger les notifications: $e'; });
@@ -52,11 +75,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     try {
       await ref.read(apiClientProvider).markAllRead();
       if (mounted) {
+        setState(() {
+          _notifications.clear();
+          _unreadCount = 0;
+        });
+        ref.read(unreadCountProvider.notifier).state = 0;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Toutes les notifications marquees comme lues'), duration: Duration(seconds: 2)),
         );
       }
-      await _load();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -72,12 +99,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (id == null) return;
     try {
       await ref.read(apiClientProvider).markRead(id.toString());
-      // Update locally for instant feedback
       if (mounted) {
         setState(() {
-          n['isRead'] = true;
+          _notifications.remove(n);
           _unreadCount = (_unreadCount - 1).clamp(0, _unreadCount);
         });
+        ref.read(unreadCountProvider.notifier).state = _unreadCount;
       }
     } catch (_) {}
   }
@@ -119,6 +146,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   Text('Notifications', style: GoogleFonts.notoSerif(fontSize: 24, fontWeight: FontWeight.w600)),
                   Text('CENTRE DE GESTION', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
                 ])),
+                IconButton(
+                  onPressed: () => context.push('/notifications/config'),
+                  icon: const Icon(Icons.tune, size: 22, color: AppColors.primary),
+                  tooltip: 'Parametrage',
+                ),
                 TextButton(
                   onPressed: _markingAllRead || _loading ? null : _markAllRead,
                   child: _markingAllRead

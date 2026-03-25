@@ -38,35 +38,26 @@ public sealed class EvaluateOverdueOrdersJob
             if (order.ExpectedDeliveryDate < today)
             {
                 var daysLate = (today.DayNumber - order.ExpectedDeliveryDate.DayNumber);
-                if (order.AssignedTailorId.HasValue)
-                {
-                    await _notificationService.CreateAndSendAsync(
-                        NotificationType.N01_Overdue, order.Id.Value, order.AssignedTailorId.Value,
-                        $"Commande {order.Code} en retard",
-                        $"Commande {order.Code} — délai dépassé de {daysLate} jour(s). Statut: {order.Status.Label}.");
-                }
+                await _notificationService.CreateAndSendToManagersAsync(
+                    NotificationType.N01_Overdue, order.Id.Value,
+                    $"Commande {order.Code} en retard",
+                    $"Commande {order.Code} — délai dépassé de {daysLate} jour(s). Statut: {order.Status.Label}.");
             }
             // N02: Due in 24h
             else if (order.ExpectedDeliveryDate == tomorrow)
             {
-                if (order.AssignedTailorId.HasValue)
-                {
-                    await _notificationService.CreateAndSendAsync(
-                        NotificationType.N02_DueIn24h, order.Id.Value, order.AssignedTailorId.Value,
-                        $"Commande {order.Code} — livraison demain",
-                        $"Commande {order.Code} doit être livrée demain {order.ExpectedDeliveryDate:dd/MM/yyyy}.");
-                }
+                await _notificationService.CreateAndSendToManagersAsync(
+                    NotificationType.N02_DueIn24h, order.Id.Value,
+                    $"Commande {order.Code} — livraison demain",
+                    $"Commande {order.Code} doit être livrée demain {order.ExpectedDeliveryDate:dd/MM/yyyy}.");
             }
             // N03: Due in 48h
             else if (order.ExpectedDeliveryDate == dayAfterTomorrow)
             {
-                if (order.AssignedTailorId.HasValue)
-                {
-                    await _notificationService.CreateAndSendAsync(
-                        NotificationType.N03_DueIn48h, order.Id.Value, order.AssignedTailorId.Value,
-                        $"Commande {order.Code} — livraison dans 2 jours",
-                        $"Commande {order.Code} doit être livrée le {order.ExpectedDeliveryDate:dd/MM/yyyy}.");
-                }
+                await _notificationService.CreateAndSendToManagersAsync(
+                    NotificationType.N03_DueIn48h, order.Id.Value,
+                    $"Commande {order.Code} — livraison dans 2 jours",
+                    $"Commande {order.Code} doit être livrée le {order.ExpectedDeliveryDate:dd/MM/yyyy}.");
             }
         }
     }

@@ -54,5 +54,8 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Navigation(o => o.Transitions).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(o => o.Photos).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Property(o => o.IsActive).HasDefaultValue(true);
+        builder.HasQueryFilter(o => o.IsActive);
     }
 }

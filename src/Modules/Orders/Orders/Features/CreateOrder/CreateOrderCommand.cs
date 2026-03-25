@@ -21,6 +21,7 @@ public sealed record CreateOrderCommand(
     string? EmbroideryZone,
     string? BeadType,
     string? Arrangement,
-    string? AffectedZones) : ICommand<CreateOrderResult>;
+    string? AffectedZones,
+    Guid? CatalogModelId = null) : ICommand<CreateOrderResult>;
 
 public sealed record CreateOrderResult(Guid OrderId, string Code, string Status, decimal OutstandingBalance);
