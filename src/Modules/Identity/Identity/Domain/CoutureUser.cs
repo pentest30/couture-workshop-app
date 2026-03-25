@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Couture.Identity.Domain;
 
-public sealed class CoutureUser : IdentityUser<Guid>
+public sealed class 
+    CoutureUser : IdentityUser<Guid>
 {
     public string FirstName { get; set; } = default!;
     public string LastName { get; set; } = default!;
