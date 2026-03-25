@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import '../../core/api/api_client.dart';
@@ -193,33 +194,64 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               const SizedBox(height: 20),
               Text('Paiements', style: GoogleFonts.notoSerif(fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              ..._payments.map((p) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(10)),
-                child: Row(children: [
-                  Icon(Icons.receipt_long, color: AppColors.statusPrete, size: 18),
-                  const SizedBox(width: 10),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('${((p as Map)['amount'] as num?)?.toStringAsFixed(0) ?? '0'} DZD — ${p['paymentMethodLabel'] ?? p['paymentMethod'] ?? ''}',
-                      style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600)),
-                    if (p['receiptCode'] != null)
-                      GestureDetector(
-                        onTap: () {
-                          final url = '${ApiClient.baseUrl}/api/finance/receipts/${p['id']}/pdf';
-                          Clipboard.setData(ClipboardData(text: url));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Lien reçu copié: $url'), action: SnackBarAction(label: 'OK', onPressed: () {})),
-                          );
-                        },
-                        child: Text('📄 Reçu: ${p['receiptCode']}', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.secondary)),
+              ..._payments.map((p) {
+                final pm = p as Map;
+                final receiptCode = pm['receiptCode']?.toString();
+                final receiptId = pm['id']?.toString();
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      const Icon(Icons.payments_outlined, color: AppColors.statusPrete, size: 18),
+                      const SizedBox(width: 8),
+                      Text('${(pm['amount'] as num?)?.toStringAsFixed(0) ?? '0'} DZD', style: GoogleFonts.notoSerif(fontSize: 16, fontWeight: FontWeight.w700)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: AppColors.primary.withAlpha(15), borderRadius: BorderRadius.circular(8)),
+                        child: Text(pm['paymentMethodLabel'] ?? pm['paymentMethod'] ?? '', style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primary)),
                       ),
-                    if (p['note'] != null && p['note'].toString().isNotEmpty)
-                      Text(p['note'].toString(), style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
-                  ])),
-                  Text(p['paymentDate'] ?? '', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
-                ]),
-              )),
+                      const Spacer(),
+                      Text(pm['paymentDate'] ?? '', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                    ]),
+                    if (pm['note'] != null && pm['note'].toString().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(pm['note'].toString(), style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                    ],
+                    if (receiptCode != null) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity, height: 36,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final url = '${ApiClient.baseUrl}/api/finance/receipts/$receiptId/pdf';
+                            try {
+                              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                            } catch (_) {
+                              if (context.mounted) {
+                                await Clipboard.setData(ClipboardData(text: url));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Lien copié: $url')),
+                                );
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.download_outlined, size: 16),
+                          label: Text('TÉLÉCHARGER REÇU $receiptCode', style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.secondary,
+                            side: const BorderSide(color: AppColors.secondaryFixed),
+                            shape: const StadiumBorder(),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ]),
+                );
+              }),
             ],
             const SizedBox(height: 20),
 
