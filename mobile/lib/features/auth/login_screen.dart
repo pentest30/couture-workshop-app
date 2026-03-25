@@ -26,7 +26,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ref.read(authStateProvider.notifier).state = data;
       if (mounted) context.go('/');
     } catch (e) {
-      setState(() => _error = 'Identifiants invalides');
+      final msg = e.toString();
+      if (msg.contains('401') || msg.contains('Unauthorized')) {
+        setState(() => _error = 'Identifiants invalides');
+      } else {
+        setState(() => _error = 'Erreur de connexion: $msg');
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

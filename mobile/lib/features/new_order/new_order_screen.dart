@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,35 +24,168 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
   final _depositController = TextEditingController();
   DateTime? _deliveryDate;
   bool _loading = false;
+  bool _searching = false;
+  String? _stepError;
+  Timer? _debounce;
+
+  // New client form
+  bool _showNewClientForm = false;
+  final _newFirstNameController = TextEditingController();
+  final _newLastNameController = TextEditingController();
+  final _newPhoneController = TextEditingController();
+  bool _creatingClient = false;
+
+  // Embroidery / beading fields
+  final _embroideryDescController = TextEditingController();
+  final _beadingDescController = TextEditingController();
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    _descController.dispose();
+    _fabricController.dispose();
+    _priceController.dispose();
+    _depositController.dispose();
+    _newFirstNameController.dispose();
+    _newLastNameController.dispose();
+    _newPhoneController.dispose();
+    _embroideryDescController.dispose();
+    _beadingDescController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    if (query.length < 2) {
+      setState(() {
+        _searchResults = [];
+        _searching = false;
+      });
+      return;
+    }
+    setState(() => _searching = true);
+    _debounce = Timer(const Duration(milliseconds: 400), () => _searchClients(query));
+  }
 
   Future<void> _searchClients(String query) async {
-    if (query.length < 2) { setState(() => _searchResults = []); return; }
     try {
       final results = await ref.read(apiClientProvider).searchClients(query);
-      setState(() => _searchResults = results);
-    } catch (_) {}
+      if (mounted) setState(() { _searchResults = results; _searching = false; });
+    } catch (e) {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  Future<void> _createNewClient() async {
+    final firstName = _newFirstNameController.text.trim();
+    final lastName = _newLastNameController.text.trim();
+    final phone = _newPhoneController.text.trim();
+    if (firstName.isEmpty || lastName.isEmpty || phone.isEmpty) {
+      setState(() => _stepError = 'Veuillez remplir tous les champs du nouveau client.');
+      return;
+    }
+    setState(() { _creatingClient = true; _stepError = null; });
+    try {
+      final client = await ref.read(apiClientProvider).createClient({
+        'firstName': firstName,
+        'lastName': lastName,
+        'primaryPhone': phone,
+      });
+      if (mounted) {
+        setState(() {
+          _selectedClient = client;
+          _showNewClientForm = false;
+          _searchResults = [];
+          _searchController.clear();
+          _creatingClient = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Client ${client['firstName']} ${client['lastName']} cree'), backgroundColor: AppColors.statusPrete),
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() { _creatingClient = false; _stepError = 'Erreur creation client: $e'; });
+    }
+  }
+
+  bool _validateStep() {
+    setState(() => _stepError = null);
+    switch (_step) {
+      case 0:
+        if (_selectedClient == null) {
+          setState(() => _stepError = 'Veuillez selectionner un client.');
+          return false;
+        }
+        return true;
+      case 1:
+        if (_workType.isEmpty) {
+          setState(() => _stepError = 'Veuillez selectionner un type de confection.');
+          return false;
+        }
+        return true;
+      case 2:
+        final price = double.tryParse(_priceController.text) ?? 0;
+        final deposit = double.tryParse(_depositController.text) ?? 0;
+        if (_deliveryDate == null) {
+          setState(() => _stepError = 'Veuillez selectionner une date de livraison.');
+          return false;
+        }
+        if (price <= 0) {
+          setState(() => _stepError = 'Le prix doit etre superieur a 0.');
+          return false;
+        }
+        if (deposit < 0 || deposit > price) {
+          setState(() => _stepError = 'L\'acompte doit etre entre 0 et le prix total.');
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  }
+
+  void _onNext() {
+    if (!_validateStep()) return;
+    if (_step < 2) {
+      setState(() => _step++);
+    } else {
+      _createOrder();
+    }
   }
 
   Future<void> _createOrder() async {
     if (_selectedClient == null || _deliveryDate == null) return;
-    setState(() => _loading = true);
+    setState(() { _loading = true; _stepError = null; });
     try {
       final api = ref.read(apiClientProvider);
-      await api.createOrder({
+      final data = <String, dynamic>{
         'clientId': _selectedClient!['id'],
         'workType': _workType,
         'expectedDeliveryDate': '${_deliveryDate!.year}-${_deliveryDate!.month.toString().padLeft(2, '0')}-${_deliveryDate!.day.toString().padLeft(2, '0')}',
         'totalPrice': double.tryParse(_priceController.text) ?? 0,
-        'initialDeposit': double.tryParse(_depositController.text),
         'depositPaymentMethod': 'Especes',
-        'description': _descController.text.isNotEmpty ? _descController.text : null,
-        'fabric': _fabricController.text.isNotEmpty ? _fabricController.text : null,
-      });
-      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Commande créée !'))); context.go('/orders'); }
+      };
+      final deposit = double.tryParse(_depositController.text);
+      if (deposit != null && deposit > 0) data['initialDeposit'] = deposit;
+      if (_descController.text.isNotEmpty) data['description'] = _descController.text;
+      if (_fabricController.text.isNotEmpty) data['fabric'] = _fabricController.text;
+      if (_embroideryDescController.text.isNotEmpty) data['embroideryDescription'] = _embroideryDescController.text;
+      if (_beadingDescController.text.isNotEmpty) data['beadingDescription'] = _beadingDescController.text;
+
+      await api.createOrder(data);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Commande creee avec succes !'), backgroundColor: AppColors.statusPrete),
+        );
+        context.go('/orders');
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      if (mounted) {
+        setState(() => _stepError = 'Erreur lors de la creation: $e');
+      }
     }
-    setState(() => _loading = false);
+    if (mounted) setState(() => _loading = false);
   }
 
   @override
@@ -64,11 +198,20 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: Row(children: [
+              GestureDetector(
+                onTap: () => context.pop(),
+                child: const Icon(Icons.arrow_back, size: 22),
+              ),
+              const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text("L'Atelier Couture", style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
                 Text('Nouvelle Commande', style: GoogleFonts.notoSerif(fontSize: 22, fontWeight: FontWeight.w600)),
               ])),
-              Text('Étape ${_step + 1} / 3', style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+                child: Text('${_step + 1} / 3', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
+              ),
             ]),
           ),
           const SizedBox(height: 8),
@@ -78,11 +221,40 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
             child: Row(children: List.generate(3, (i) => Expanded(
               child: Container(
                 height: 3, margin: const EdgeInsets.symmetric(horizontal: 2),
-                decoration: BoxDecoration(color: i <= _step ? AppColors.primary : AppColors.outlineVariant.withOpacity(0.3), borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: i <= _step ? AppColors.primary : AppColors.outlineVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ))),
           ),
-          const SizedBox(height: 20),
+          // Step label
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                ['Client', 'Travail', 'Planning'][_step],
+                style: GoogleFonts.manrope(fontSize: 11, letterSpacing: 1.2, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Error message
+          if (_stepError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: AppColors.error.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+                child: Row(children: [
+                  const Icon(Icons.error_outline, color: AppColors.error, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_stepError!, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.error, fontWeight: FontWeight.w500))),
+                ]),
+              ),
+            ),
           // Step content
           Expanded(
             child: Padding(
@@ -100,17 +272,17 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
             child: Row(children: [
               if (_step > 0) Expanded(child: OutlinedButton(
-                onPressed: () => setState(() => _step--),
+                onPressed: _loading ? null : () => setState(() { _step--; _stepError = null; }),
                 style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary, side: const BorderSide(color: AppColors.outlineVariant), shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 14)),
-                child: Text('← PRÉCÉDENT', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+                child: Text('PRECEDENT', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
               )),
               if (_step > 0) const SizedBox(width: 12),
               Expanded(child: ElevatedButton(
-                onPressed: _loading ? null : () { if (_step < 2) setState(() => _step++); else _createOrder(); },
+                onPressed: _loading ? null : _onNext,
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 14)),
                 child: _loading
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text(_step < 2 ? 'SUIVANT →' : 'CRÉER ✓', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
+                    : Text(_step < 2 ? 'SUIVANT' : 'CREER', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
               )),
             ]),
           ),
@@ -121,70 +293,135 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
 
   Widget _buildClientStep() {
     return ListView(children: [
-      Text('Sélectionner le client', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600)),
+      const SizedBox(height: 4),
+      Text('Selectionner le client', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600)),
       const SizedBox(height: 12),
       TextField(
         controller: _searchController,
-        onChanged: _searchClients,
-        decoration: InputDecoration(hintText: 'Rechercher par nom ou N° client...', prefixIcon: const Icon(Icons.search), hintStyle: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurfaceVariant)),
+        onChanged: _onSearchChanged,
+        decoration: InputDecoration(
+          hintText: 'Rechercher par nom ou telephone...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _searching ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))) : null,
+          hintStyle: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurfaceVariant),
+        ),
       ),
       const SizedBox(height: 12),
       // + New client button
       OutlinedButton.icon(
-        onPressed: () {}, icon: const Icon(Icons.add),
-        label: Text('NOUVEAU CLIENT', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+        onPressed: () => setState(() { _showNewClientForm = !_showNewClientForm; _stepError = null; }),
+        icon: Icon(_showNewClientForm ? Icons.close : Icons.add),
+        label: Text(_showNewClientForm ? 'ANNULER' : 'NOUVEAU CLIENT', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(foregroundColor: AppColors.secondary, side: const BorderSide(color: AppColors.secondaryFixed), shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 12)),
       ),
-      const SizedBox(height: 16),
-      if (_searchResults.isNotEmpty) ...[
-        Text('CLIENTS RÉCENTS', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        ..._searchResults.map((c) => GestureDetector(
-          onTap: () => setState(() { _selectedClient = c; _searchResults = []; }),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: _selectedClient?['id'] == c['id'] ? AppColors.secondaryFixed.withOpacity(0.15) : AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: _selectedClient?['id'] == c['id'] ? Border.all(color: AppColors.secondaryFixed) : null,
+      // New client inline form
+      if (_showNewClientForm) ...[
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.secondaryFixed.withOpacity(0.4))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('NOUVEAU CLIENT', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.secondary, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _newFirstNameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(labelText: 'Prenom *', labelStyle: GoogleFonts.manrope(fontSize: 13)),
             ),
-            child: Row(children: [
-              CircleAvatar(radius: 20, backgroundColor: AppColors.primaryContainer,
-                child: Text('${c['firstName']?[0] ?? ''}${c['lastName']?[0] ?? ''}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600))),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${c['firstName']} ${c['lastName']}', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600)),
-                Text('${c['code']} · ${c['primaryPhone']}', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
-              ])),
-            ]),
-          ),
-        )),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _newLastNameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(labelText: 'Nom *', labelStyle: GoogleFonts.manrope(fontSize: 13)),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _newPhoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(labelText: 'Telephone *', labelStyle: GoogleFonts.manrope(fontSize: 13)),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _creatingClient ? null : _createNewClient,
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 12)),
+                child: _creatingClient
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text('ENREGISTRER', style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 13)),
+              ),
+            ),
+          ]),
+        ),
       ],
+      const SizedBox(height: 16),
+      // Search results
+      if (_searchResults.isNotEmpty) ...[
+        Text('RESULTATS', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        ..._searchResults.map((c) => _clientTile(c, selectable: true)),
+      ],
+      // Selected client display
       if (_selectedClient != null && _searchResults.isEmpty) ...[
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: AppColors.secondaryFixed.withOpacity(0.12), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.secondaryFixed)),
-          child: Row(children: [
-            CircleAvatar(radius: 20, backgroundColor: AppColors.primaryContainer,
-              child: Text('${_selectedClient!['firstName']?[0]}${_selectedClient!['lastName']?[0]}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600))),
-            const SizedBox(width: 12),
-            Expanded(child: Text('${_selectedClient!['firstName']} ${_selectedClient!['lastName']}', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600))),
-            const Icon(Icons.check_circle, color: AppColors.statusPrete),
-          ]),
+        Text('CLIENT SELECTIONNE', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        _clientTile(_selectedClient!, selected: true),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => setState(() { _selectedClient = null; _searchController.clear(); }),
+            icon: const Icon(Icons.swap_horiz, size: 16),
+            label: Text('Changer de client', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600)),
+            style: TextButton.styleFrom(foregroundColor: AppColors.onSurfaceVariant),
+          ),
         ),
       ],
     ]);
   }
 
+  Widget _clientTile(Map<String, dynamic> c, {bool selectable = false, bool selected = false}) {
+    final isSelected = selected || _selectedClient?['id'] == c['id'];
+    return GestureDetector(
+      onTap: selectable ? () => setState(() { _selectedClient = c; _searchResults = []; _searchController.clear(); _stepError = null; }) : null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.secondaryFixed.withOpacity(0.15) : AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: isSelected ? Border.all(color: AppColors.secondaryFixed) : null,
+        ),
+        child: Row(children: [
+          CircleAvatar(
+            radius: 20, backgroundColor: AppColors.primaryContainer,
+            child: Text(
+              '${(c['firstName'] as String?)?.isNotEmpty == true ? c['firstName'][0] : ''}${(c['lastName'] as String?)?.isNotEmpty == true ? c['lastName'][0] : ''}',
+              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${c['firstName'] ?? ''} ${c['lastName'] ?? ''}', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600)),
+            Text('${c['code'] ?? ''} ${c['primaryPhone'] != null ? '- ${c['primaryPhone']}' : ''}', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+          ])),
+          if (isSelected) const Icon(Icons.check_circle, color: AppColors.statusPrete, size: 22),
+        ]),
+      ),
+    );
+  }
+
   Widget _buildWorkStep() {
     final types = ['Simple', 'Brode', 'Perle', 'Mixte'];
-    final labels = {'Simple': 'Simple', 'Brode': 'Brodé', 'Perle': 'Perlé', 'Mixte': 'Mixte'};
+    final labels = {'Simple': 'Simple', 'Brode': 'Brode', 'Perle': 'Perle', 'Mixte': 'Mixte'};
     final icons = {'Simple': Icons.checkroom, 'Brode': Icons.brush, 'Perle': Icons.diamond, 'Mixte': Icons.auto_awesome};
+    final showEmbroidery = _workType == 'Brode' || _workType == 'Mixte';
+    final showBeading = _workType == 'Perle' || _workType == 'Mixte';
 
     return ListView(children: [
-      Text('Détails du Travail', style: GoogleFonts.notoSerif(fontSize: 20, fontWeight: FontWeight.w600)),
+      const SizedBox(height: 4),
+      Text('Details du Travail', style: GoogleFonts.notoSerif(fontSize: 20, fontWeight: FontWeight.w600)),
       const SizedBox(height: 4),
       Text('TYPE DE CONFECTION', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
       const SizedBox(height: 12),
@@ -212,33 +449,147 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
       TextField(controller: _descController, maxLines: 3, decoration: InputDecoration(labelText: 'Description du travail', labelStyle: GoogleFonts.manrope(fontSize: 13))),
       const SizedBox(height: 12),
       TextField(controller: _fabricController, decoration: InputDecoration(labelText: 'Tissu', labelStyle: GoogleFonts.manrope(fontSize: 13))),
+      // Embroidery fields
+      if (showEmbroidery) ...[
+        const SizedBox(height: 20),
+        Text('BRODERIE', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.statusBroderie, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _embroideryDescController,
+          maxLines: 2,
+          decoration: InputDecoration(
+            labelText: 'Description de la broderie',
+            labelStyle: GoogleFonts.manrope(fontSize: 13),
+            prefixIcon: const Icon(Icons.brush, size: 18),
+          ),
+        ),
+      ],
+      // Beading fields
+      if (showBeading) ...[
+        const SizedBox(height: 20),
+        Text('PERLAGE', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.statusPerlage, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _beadingDescController,
+          maxLines: 2,
+          decoration: InputDecoration(
+            labelText: 'Description du perlage',
+            labelStyle: GoogleFonts.manrope(fontSize: 13),
+            prefixIcon: const Icon(Icons.diamond, size: 18),
+          ),
+        ),
+      ],
     ]);
   }
 
   Widget _buildPlanningStep() {
+    final price = double.tryParse(_priceController.text) ?? 0;
+    final deposit = double.tryParse(_depositController.text) ?? 0;
+    final balance = (price - deposit).clamp(0, double.infinity);
+
     return ListView(children: [
+      const SizedBox(height: 4),
       Text('Planning & Tarification', style: GoogleFonts.notoSerif(fontSize: 20, fontWeight: FontWeight.w600)),
       const SizedBox(height: 16),
       // Delivery date
       GestureDetector(
         onTap: () async {
-          final date = await showDatePicker(context: context, initialDate: DateTime.now().add(const Duration(days: 7)), firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
+          final date = await showDatePicker(
+            context: context,
+            initialDate: _deliveryDate ?? DateTime.now().add(const Duration(days: 7)),
+            firstDate: DateTime.now(),
+            lastDate: DateTime.now().add(const Duration(days: 365)),
+          );
           if (date != null) setState(() => _deliveryDate = date);
         },
         child: Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: _deliveryDate != null ? AppColors.primary.withOpacity(0.06) : AppColors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            border: _deliveryDate != null ? Border.all(color: AppColors.primary.withOpacity(0.3)) : null,
+          ),
           child: Row(children: [
-            const Icon(Icons.calendar_today_outlined, color: AppColors.onSurfaceVariant, size: 20),
+            Icon(Icons.calendar_today_outlined, color: _deliveryDate != null ? AppColors.primary : AppColors.onSurfaceVariant, size: 20),
             const SizedBox(width: 12),
-            Text(_deliveryDate != null ? '${_deliveryDate!.day}/${_deliveryDate!.month}/${_deliveryDate!.year}' : 'Date de livraison prévue', style: GoogleFonts.manrope(fontSize: 14, color: _deliveryDate != null ? AppColors.onSurface : AppColors.onSurfaceVariant)),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (_deliveryDate != null) Text('DATE DE LIVRAISON', style: GoogleFonts.manrope(fontSize: 9, letterSpacing: 1, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+              Text(
+                _deliveryDate != null
+                    ? '${_deliveryDate!.day.toString().padLeft(2, '0')}/${_deliveryDate!.month.toString().padLeft(2, '0')}/${_deliveryDate!.year}'
+                    : 'Date de livraison prevue *',
+                style: GoogleFonts.manrope(fontSize: 14, fontWeight: _deliveryDate != null ? FontWeight.w600 : FontWeight.w400, color: _deliveryDate != null ? AppColors.onSurface : AppColors.onSurfaceVariant),
+              ),
+            ])),
+            if (_deliveryDate != null) const Icon(Icons.check_circle_outline, color: AppColors.statusPrete, size: 18),
           ]),
         ),
       ),
       const SizedBox(height: 16),
-      TextField(controller: _priceController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Prix total (DZD)', prefixIcon: const Icon(Icons.monetization_on_outlined), labelStyle: GoogleFonts.manrope(fontSize: 13))),
+      TextField(
+        controller: _priceController,
+        keyboardType: TextInputType.number,
+        onChanged: (_) => setState(() {}),
+        decoration: InputDecoration(
+          labelText: 'Prix total (DZD) *',
+          prefixIcon: const Icon(Icons.monetization_on_outlined),
+          labelStyle: GoogleFonts.manrope(fontSize: 13),
+        ),
+      ),
       const SizedBox(height: 12),
-      TextField(controller: _depositController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Acompte (DZD)', prefixIcon: const Icon(Icons.payments_outlined), labelStyle: GoogleFonts.manrope(fontSize: 13))),
+      TextField(
+        controller: _depositController,
+        keyboardType: TextInputType.number,
+        onChanged: (_) => setState(() {}),
+        decoration: InputDecoration(
+          labelText: 'Acompte (DZD)',
+          prefixIcon: const Icon(Icons.payments_outlined),
+          labelStyle: GoogleFonts.manrope(fontSize: 13),
+        ),
+      ),
+      const SizedBox(height: 16),
+      // Balance display
+      if (price > 0) Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
+        child: Column(children: [
+          _summaryRow('Prix total', '${price.toStringAsFixed(0)} DZD'),
+          if (deposit > 0) ...[
+            const SizedBox(height: 6),
+            _summaryRow('Acompte', '- ${deposit.toStringAsFixed(0)} DZD'),
+          ],
+          const SizedBox(height: 6),
+          const Divider(height: 1),
+          const SizedBox(height: 6),
+          _summaryRow('Reste a payer', '${balance.toStringAsFixed(0)} DZD', bold: true, color: balance > 0 ? AppColors.secondary : AppColors.statusPrete),
+        ]),
+      ),
+      // Order summary
+      const SizedBox(height: 20),
+      if (_selectedClient != null) ...[
+        Text('RESUME', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _summaryRow('Client', '${_selectedClient!['firstName']} ${_selectedClient!['lastName']}'),
+            const SizedBox(height: 4),
+            _summaryRow('Type', _workType),
+            if (_descController.text.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              _summaryRow('Description', _descController.text),
+            ],
+          ]),
+        ),
+      ],
+    ]);
+  }
+
+  Widget _summaryRow(String label, String value, {bool bold = false, Color? color}) {
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(label, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+      Flexible(child: Text(value, style: GoogleFonts.manrope(fontSize: 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: color ?? AppColors.onSurface), textAlign: TextAlign.end)),
     ]);
   }
 }

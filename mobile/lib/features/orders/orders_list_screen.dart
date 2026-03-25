@@ -16,6 +16,7 @@ class OrdersListScreen extends ConsumerStatefulWidget {
 class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
   List<dynamic> _orders = [];
   bool _loading = true;
+  String? _error;
   String _selectedFilter = 'Tous';
   final _filters = ['Tous', 'En cours', 'En retard', 'Brodé'];
 
@@ -26,18 +27,42 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
   }
 
   Future<void> _loadOrders() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final api = ref.read(apiClientProvider);
       String? status;
       bool? lateOnly;
-      if (_selectedFilter == 'En cours') status = 'EnCours';
-      if (_selectedFilter == 'En retard') lateOnly = true;
-      if (_selectedFilter == 'Brodé') status = 'Brode';
-      final data = await api.getOrders(status: status, lateOnly: lateOnly);
-      setState(() { _orders = data['items'] ?? []; _loading = false; });
-    } catch (_) {
-      setState(() => _loading = false);
+      String? workType;
+
+      switch (_selectedFilter) {
+        case 'En cours':
+          status = 'EnCours';
+          break;
+        case 'En retard':
+          lateOnly = true;
+          break;
+        case 'Brodé':
+          workType = 'Brode';
+          break;
+      }
+
+      final data = await api.getOrders(
+        status: status,
+        lateOnly: lateOnly,
+        workType: workType,
+      );
+      setState(() {
+        _orders = data['items'] ?? [];
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
     }
   }
 
@@ -71,7 +96,12 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
                     return ChoiceChip(
                       label: Text(_filters[i]),
                       selected: selected,
-                      onSelected: (_) { setState(() => _selectedFilter = _filters[i]); _loadOrders(); },
+                      onSelected: (_) {
+                        if (_selectedFilter != _filters[i]) {
+                          setState(() => _selectedFilter = _filters[i]);
+                          _loadOrders();
+                        }
+                      },
                       labelStyle: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? Colors.white : AppColors.onSurface),
                     );
                   },
@@ -85,17 +115,31 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : _orders.isEmpty
-                    ? Center(child: Text('Aucune commande', style: GoogleFonts.manrope(color: AppColors.onSurfaceVariant)))
-                    : RefreshIndicator(
-                        onRefresh: _loadOrders,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
-                          itemCount: _orders.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 10),
-                          itemBuilder: (_, i) => _orderCard(_orders[i]),
-                        ),
-                      ),
+                : _error != null
+                    ? Center(
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          Text('Erreur de chargement', style: GoogleFonts.manrope(color: AppColors.error, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          TextButton(onPressed: _loadOrders, child: const Text('Réessayer')),
+                        ]),
+                      )
+                    : _orders.isEmpty
+                        ? Center(
+                            child: Column(mainAxisSize: MainAxisSize.min, children: [
+                              Icon(Icons.inbox_outlined, size: 48, color: AppColors.onSurfaceVariant.withOpacity(0.4)),
+                              const SizedBox(height: 12),
+                              Text('Aucune commande', style: GoogleFonts.manrope(color: AppColors.onSurfaceVariant)),
+                            ]),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadOrders,
+                            child: ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
+                              itemCount: _orders.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 10),
+                              itemBuilder: (_, i) => _orderCard(_orders[i]),
+                            ),
+                          ),
           ),
         ]),
       ),
@@ -108,6 +152,7 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
 
   Widget _orderCard(Map<String, dynamic> order) {
     final isLate = order['isLate'] == true;
+    final clientName = order['clientName'] ?? _shortId(order['clientId']) ?? 'Client';
     return GestureDetector(
       onTap: () => context.go('/orders/${order['id']}'),
       child: Container(
@@ -125,10 +170,10 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
             WorkTypeBadge(workType: order['workType'] ?? 'Simple'),
           ]),
           const SizedBox(height: 8),
-          Text(order['clientName'] ?? 'Client', style: GoogleFonts.notoSerif(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(clientName, style: GoogleFonts.notoSerif(fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Row(children: [
-            StatusBadge(status: order['status'] ?? '', label: order['statusLabel'] ?? ''),
+            StatusBadge(status: order['status'] ?? '', label: order['statusLabel'] ?? order['status'] ?? ''),
             const Spacer(),
             if (isLate) ...[
               Container(
@@ -139,11 +184,25 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
             ] else ...[
               Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.onSurfaceVariant),
               const SizedBox(width: 4),
-              Text(order['expectedDeliveryDate'] ?? '', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+              Text(_formatDate(order['expectedDeliveryDate']), style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
             ],
           ]),
         ]),
       ),
     );
+  }
+
+  String _formatDate(dynamic date) {
+    if (date == null) return '';
+    final str = date.toString();
+    if (str.length >= 10) return str.substring(0, 10);
+    return str;
+  }
+
+  String? _shortId(dynamic id) {
+    if (id == null) return null;
+    final str = id.toString();
+    if (str.length >= 8) return 'Client #${str.substring(0, 8)}';
+    return 'Client #$str';
   }
 }

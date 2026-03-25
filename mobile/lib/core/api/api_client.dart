@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 class ApiClient {
-  static const baseUrl = 'http://10.0.2.2:5050'; // Android emulator -> localhost
+  static const baseUrl = 'http://127.0.0.1:5050'; // via adb reverse tcp:5050
 
   late final Dio dio;
   String? _token;
@@ -43,11 +43,12 @@ class ApiClient {
   }
 
   // Orders
-  Future<Map<String, dynamic>> getOrders({int page = 1, String? status, String? search, bool? lateOnly}) async {
+  Future<Map<String, dynamic>> getOrders({int page = 1, String? status, String? search, bool? lateOnly, String? workType}) async {
     final params = <String, dynamic>{'page': page, 'pageSize': 20};
     if (status != null) params['status'] = status;
     if (search != null) params['search'] = search;
     if (lateOnly == true) params['lateOnly'] = true;
+    if (workType != null) params['workType'] = workType;
     final response = await dio.get('/api/orders', queryParameters: params);
     return response.data;
   }
@@ -112,6 +113,25 @@ class ApiClient {
 
   Future<void> markAllRead() async {
     await dio.post('/api/notifications/read-all');
+  }
+
+  // Clients list
+  Future<Map<String, dynamic>> getClients({int page = 1, String? search}) async {
+    final params = <String, dynamic>{'page': page, 'pageSize': 20};
+    if (search != null) params['search'] = search;
+    final response = await dio.get('/api/clients', queryParameters: params);
+    return response.data;
+  }
+
+  // Dashboard charts
+  Future<Map<String, dynamic>> getMonthlyHistogram(int year, int quarter) async {
+    final response = await dio.get('/api/dashboard/charts/monthly-histogram', queryParameters: {'year': year, 'quarter': quarter});
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> getStatusDistribution(int year, int quarter) async {
+    final response = await dio.get('/api/dashboard/charts/status-distribution', queryParameters: {'year': year, 'quarter': quarter});
+    return response.data;
   }
 
   // Finance

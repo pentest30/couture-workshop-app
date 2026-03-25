@@ -17,87 +17,176 @@ class OrderDetailScreen extends ConsumerStatefulWidget {
 
 class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   Map<String, dynamic>? _order;
+  List<dynamic> _payments = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _loadOrder();
+    _loadData();
   }
 
-  Future<void> _loadOrder() async {
+  Future<void> _loadData() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      final data = await ref.read(apiClientProvider).getOrder(widget.orderId);
-      setState(() { _order = data; _loading = false; });
-    } catch (_) {
-      setState(() => _loading = false);
+      final api = ref.read(apiClientProvider);
+      final results = await Future.wait([
+        api.getOrder(widget.orderId),
+        api.getPayments(widget.orderId),
+      ]);
+      setState(() {
+        _order = results[0] as Map<String, dynamic>;
+        _payments = results[1] as List<dynamic>;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
     }
+  }
+
+  double get _outstandingBalance {
+    if (_order == null) return 0;
+    final total = (_order!['totalPrice'] as num?)?.toDouble() ?? 0;
+    final paid = _payments.fold<double>(0, (sum, p) => sum + (((p as Map)['amount'] as num?)?.toDouble() ?? 0));
+    return total - paid;
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primary)));
-    if (_order == null) return const Scaffold(body: Center(child: Text('Commande introuvable')));
+    if (_error != null || _order == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Commande'), leading: const BackButton()),
+        body: Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(_order == null ? 'Commande introuvable' : 'Erreur de chargement', style: GoogleFonts.manrope(color: AppColors.error)),
+            const SizedBox(height: 8),
+            TextButton(onPressed: _loadData, child: const Text('Réessayer')),
+          ]),
+        ),
+      );
+    }
 
     final o = _order!;
+    final clientName = o['clientName'] ?? _shortId(o['clientId']) ?? 'Client';
+    final balance = _outstandingBalance;
+    final photos = o['photos'] as List<dynamic>? ?? [];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Commande'), leading: const BackButton()),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-        children: [
-          // Status + Work type
-          Row(children: [
-            StatusBadge(status: o['status'], label: o['statusLabel']),
-            const SizedBox(width: 8),
-            WorkTypeBadge(workType: o['workType']),
-          ]),
-          const SizedBox(height: 16),
-
-          // Client + Code
-          Text(o['clientName'] ?? 'Client', style: GoogleFonts.notoSerif(fontSize: 24, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(o['code'], style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant)),
-          const SizedBox(height: 20),
-
-          // Dates row
-          Row(children: [
-            _infoChip(Icons.calendar_today_outlined, o['receptionDate'] ?? ''),
-            const SizedBox(width: 12),
-            _infoChip(Icons.flag_outlined, o['expectedDeliveryDate'] ?? ''),
-          ]),
-          const SizedBox(height: 20),
-          const GoldDivider(),
-          const SizedBox(height: 20),
-
-          // Description
-          if (o['description'] != null) ...[
-            Text(o['description'], style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface, height: 1.5)),
-            const SizedBox(height: 20),
-          ],
-
-          // Pricing
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.surfaceContainer, borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('PRIX TOTAL', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                Text('${o['totalPrice']} DZD', style: GoogleFonts.notoSerif(fontSize: 20, fontWeight: FontWeight.w700)),
-              ])),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text('SOLDE RESTANT', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                Text('${o['outstandingBalance']} DZD', style: GoogleFonts.notoSerif(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.secondary)),
-              ])),
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+          children: [
+            // Status + Work type
+            Row(children: [
+              StatusBadge(status: o['status'] ?? '', label: o['statusLabel'] ?? o['status'] ?? ''),
+              const SizedBox(width: 8),
+              WorkTypeBadge(workType: o['workType'] ?? 'Simple'),
             ]),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-          // Timeline
-          Text('Historique', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          ..._buildTimeline(o['timeline'] ?? []),
-        ],
+            // Client + Code
+            Text(clientName, style: GoogleFonts.notoSerif(fontSize: 24, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(o['code'] ?? '', style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant)),
+            const SizedBox(height: 20),
+
+            // Dates row
+            Row(children: [
+              _infoChip(Icons.calendar_today_outlined, _formatDate(o['receptionDate'])),
+              const SizedBox(width: 12),
+              _infoChip(Icons.flag_outlined, _formatDate(o['expectedDeliveryDate'])),
+            ]),
+
+            // Actual delivery date if present
+            if (o['actualDeliveryDate'] != null) ...[
+              const SizedBox(height: 8),
+              _infoChip(Icons.check_circle_outline, 'Livr\u00e9e: ${_formatDate(o['actualDeliveryDate'])}'),
+            ],
+            const SizedBox(height: 20),
+
+            // Artisan info
+            if (o['assignedArtisanId'] != null || o['assignedEmbroidererId'] != null || o['assignedBeaderId'] != null) ...[
+              _buildArtisanSection(o),
+              const SizedBox(height: 16),
+            ],
+
+            const GoldDivider(),
+            const SizedBox(height: 20),
+
+            // Description
+            if (o['description'] != null && (o['description'] as String).isNotEmpty) ...[
+              Text(o['description'], style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurface, height: 1.5)),
+              const SizedBox(height: 20),
+            ],
+
+            // Work-type-specific fields
+            _buildWorkTypeDetails(o),
+
+            // Photos
+            if (photos.isNotEmpty) ...[
+              Row(children: [
+                Icon(Icons.photo_library_outlined, size: 16, color: AppColors.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text('${photos.length} photo${photos.length > 1 ? 's' : ''}', style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+              ]),
+              const SizedBox(height: 16),
+            ],
+
+            // Pricing
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: AppColors.surfaceContainer, borderRadius: BorderRadius.circular(12)),
+              child: Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('PRIX TOTAL', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                  Text('${o['totalPrice'] ?? 0} DZD', style: GoogleFonts.notoSerif(fontSize: 20, fontWeight: FontWeight.w700)),
+                ])),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text('SOLDE RESTANT', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                  Text('${balance.toStringAsFixed(0)} DZD', style: GoogleFonts.notoSerif(fontSize: 20, fontWeight: FontWeight.w700, color: balance > 0 ? AppColors.secondary : AppColors.statusPrete)),
+                ])),
+              ]),
+            ),
+
+            // Payments list
+            if (_payments.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text('Paiements', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: AppColors.onSurfaceVariant)),
+              const SizedBox(height: 8),
+              ..._payments.map((p) {
+                final payment = p as Map<String, dynamic>;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(children: [
+                    Icon(Icons.payment, size: 14, color: AppColors.statusPrete),
+                    const SizedBox(width: 8),
+                    Text('${payment['amount']} DZD', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
+                    const Spacer(),
+                    Text(_formatDate(payment['paidAt'] ?? payment['createdAt']), style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                  ]),
+                );
+              }),
+            ],
+            const SizedBox(height: 24),
+
+            // Timeline
+            Text('Historique', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            ..._buildTimeline(o['timeline'] ?? []),
+          ],
+        ),
       ),
       bottomSheet: o['status'] != 'Livree'
           ? Container(
@@ -107,11 +196,13 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                 width: double.infinity, height: 52,
                 child: ElevatedButton(
                   onPressed: () async {
-                    await showModalBottomSheet(
+                    final changed = await showModalBottomSheet<bool>(
                       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
                       builder: (_) => ChangeStatusSheet(order: o, api: ref.read(apiClientProvider)),
                     );
-                    _loadOrder();
+                    if (changed == true) {
+                      _loadData();
+                    }
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: const StadiumBorder()),
                   child: Text('Changer le Statut', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600)),
@@ -119,6 +210,57 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               ),
             )
           : null,
+    );
+  }
+
+  Widget _buildArtisanSection(Map<String, dynamic> o) {
+    final artisans = <Widget>[];
+    if (o['assignedArtisanId'] != null) {
+      artisans.add(_infoChip(Icons.person_outline, 'Artisan: ${_shortId(o['assignedArtisanId']) ?? ''}'));
+    }
+    if (o['assignedEmbroidererId'] != null) {
+      artisans.add(_infoChip(Icons.brush_outlined, 'Brodeur: ${_shortId(o['assignedEmbroidererId']) ?? ''}'));
+    }
+    if (o['assignedBeaderId'] != null) {
+      artisans.add(_infoChip(Icons.diamond_outlined, 'Perleur: ${_shortId(o['assignedBeaderId']) ?? ''}'));
+    }
+    return Wrap(spacing: 8, runSpacing: 8, children: artisans);
+  }
+
+  Widget _buildWorkTypeDetails(Map<String, dynamic> o) {
+    final details = <Widget>[];
+    if (o['embroideryStyle'] != null) {
+      details.add(_detailRow('Style broderie', o['embroideryStyle']));
+    }
+    if (o['beadType'] != null) {
+      details.add(_detailRow('Type de perle', o['beadType']));
+    }
+    if (o['fabricType'] != null) {
+      details.add(_detailRow('Type de tissu', o['fabricType']));
+    }
+    if (o['measurements'] != null) {
+      details.add(_detailRow('Mesures', o['measurements']));
+    }
+    if (details.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...details,
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+          width: 120,
+          child: Text(label, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        ),
+        Expanded(child: Text(value, style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurface))),
+      ]),
     );
   }
 
@@ -135,8 +277,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   }
 
   List<Widget> _buildTimeline(List<dynamic> timeline) {
+    if (timeline.isEmpty) {
+      return [Text('Aucun historique', style: GoogleFonts.manrope(fontSize: 13, color: AppColors.onSurfaceVariant))];
+    }
     return timeline.asMap().entries.map((e) {
-      final t = e.value;
+      final t = e.value as Map<String, dynamic>;
       final isLast = e.key == timeline.length - 1;
       final color = AppColors.statusColor(t['toStatus'] ?? '');
       return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -148,12 +293,34 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         Expanded(child: Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(t['toStatusLabel'] ?? '', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: color)),
-            if (t['reason'] != null) Text(t['reason'], style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
-            Text(t['transitionedAt']?.toString().substring(0, 16) ?? '', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
+            Text(t['toStatusLabel'] ?? t['toStatus'] ?? '', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: color)),
+            if (t['reason'] != null && (t['reason'] as String).isNotEmpty)
+              Text(t['reason'], style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+            Text(_formatDateTime(t['transitionedAt']), style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
           ]),
         )),
       ]);
     }).toList();
+  }
+
+  String _formatDate(dynamic date) {
+    if (date == null) return '';
+    final str = date.toString();
+    if (str.length >= 10) return str.substring(0, 10);
+    return str;
+  }
+
+  String _formatDateTime(dynamic date) {
+    if (date == null) return '';
+    final str = date.toString();
+    if (str.length >= 16) return str.substring(0, 16).replaceFirst('T', ' ');
+    return str;
+  }
+
+  String? _shortId(dynamic id) {
+    if (id == null) return null;
+    final str = id.toString();
+    if (str.length >= 8) return str.substring(0, 8);
+    return str;
   }
 }
