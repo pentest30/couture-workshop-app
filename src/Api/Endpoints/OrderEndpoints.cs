@@ -18,7 +18,7 @@ public static class OrderEndpoints
             .RequireAuthorization(CouturePermissions.OrdersCreate);
 
         group.MapGet("/", ListOrders)
-            .RequireAuthorization(p => p.RequireAssertion(ctx => true)); // Checked inside handler: OrdersView or OrdersViewOwn
+            .RequireAuthorization(p => p.RequireAssertion(ctx => true));
 
         group.MapGet("/{id:guid}", GetOrder)
             .RequireAuthorization(CouturePermissions.OrdersView);
@@ -31,8 +31,15 @@ public static class OrderEndpoints
         [FromBody] CreateOrderCommand command,
         IMediator mediator)
     {
-        var result = await mediator.Send(command);
-        return Results.Created($"/api/orders/{result.OrderId}", result);
+        try
+        {
+            var result = await mediator.Send(command);
+            return Results.Created($"/api/orders/{result.OrderId}", result);
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
     }
 
     private static async Task<IResult> ListOrders(
@@ -68,12 +75,23 @@ public static class OrderEndpoints
         IMediator mediator,
         ICurrentUser currentUser)
     {
-        var command = new ChangeStatusCommand(
-            id, request.NewStatus, request.Reason,
-            request.AssignedEmbroidererId, request.AssignedBeaderId,
-            request.ActualDeliveryDate, currentUser.UserId);
-        var result = await mediator.Send(command);
-        return Results.Ok(result);
+        try
+        {
+            var command = new ChangeStatusCommand(
+                id, request.NewStatus, request.Reason,
+                request.AssignedEmbroidererId, request.AssignedBeaderId,
+                request.ActualDeliveryDate, currentUser.UserId);
+            var result = await mediator.Send(command);
+            return Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
     }
 }
 

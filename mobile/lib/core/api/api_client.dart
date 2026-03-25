@@ -1,7 +1,15 @@
 import 'package:dio/dio.dart';
 
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
+  ApiException(this.message, [this.statusCode]);
+  @override
+  String toString() => message;
+}
+
 class ApiClient {
-  static const baseUrl = 'http://127.0.0.1:5050'; // via adb reverse tcp:5050
+  static const baseUrl = 'http://192.168.100.80:5050'; // LAN IP (phone must be on same Wi-Fi)
 
   late final Dio dio;
   String? _token;
@@ -9,9 +17,10 @@ class ApiClient {
   ApiClient() {
     dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
       headers: {'Content-Type': 'application/json'},
+      validateStatus: (status) => status != null && status < 500, // Don't throw on 4xx
     ));
 
     dio.interceptors.add(InterceptorsWrapper(
@@ -30,6 +39,23 @@ class ApiClient {
     ));
   }
 
+  /// Extract error message from response or throw ApiException
+  dynamic _handleResponse(Response response) {
+    if (response.statusCode != null && response.statusCode! >= 400) {
+      final data = response.data;
+      String msg = 'Erreur ${response.statusCode}';
+      if (data is Map && data.containsKey('error')) {
+        msg = data['error'].toString();
+      } else if (data is Map && data.containsKey('title')) {
+        msg = data['title'].toString();
+      } else if (data is String && data.isNotEmpty) {
+        msg = data;
+      }
+      throw ApiException(msg, response.statusCode);
+    }
+    return response.data;
+  }
+
   void setToken(String token) => _token = token;
   void clearToken() => _token = null;
   bool get isAuthenticated => _token != null;
@@ -37,7 +63,7 @@ class ApiClient {
   // Auth
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await dio.post('/api/auth/login', data: {'email': email, 'password': password});
-    final data = response.data as Map<String, dynamic>;
+    final data = _handleResponse(response) as Map<String, dynamic>;
     setToken(data['accessToken']);
     return data;
   }
@@ -50,12 +76,12 @@ class ApiClient {
     if (lateOnly == true) params['lateOnly'] = true;
     if (workType != null) params['workType'] = workType;
     final response = await dio.get('/api/orders', queryParameters: params);
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> getOrder(String id) async {
     final response = await dio.get('/api/orders/$id');
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> changeStatus(String orderId, String newStatus, {String? reason, String? embroidererId, String? beaderId, String? actualDeliveryDate}) async {
@@ -66,53 +92,56 @@ class ApiClient {
       if (beaderId != null) 'assignedBeaderId': beaderId,
       if (actualDeliveryDate != null) 'actualDeliveryDate': actualDeliveryDate,
     });
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> createOrder(Map<String, dynamic> data) async {
     final response = await dio.post('/api/orders', data: data);
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   // Clients
   Future<List<dynamic>> searchClients(String query) async {
     final response = await dio.get('/api/clients/search', queryParameters: {'q': query});
-    return response.data;
+    return _handleResponse(response) as List<dynamic>;
   }
 
   Future<Map<String, dynamic>> getClient(String id) async {
     final response = await dio.get('/api/clients/$id');
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> createClient(Map<String, dynamic> data) async {
     final response = await dio.post('/api/clients', data: data);
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   // Dashboard
   Future<Map<String, dynamic>> getKPIs(int year, int quarter) async {
     final response = await dio.get('/api/dashboard/kpis', queryParameters: {'year': year, 'quarter': quarter});
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   // Notifications
   Future<Map<String, dynamic>> getNotifications({String filter = 'all', int page = 1}) async {
     final response = await dio.get('/api/notifications', queryParameters: {'filter': filter, 'page': page});
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   Future<int> getUnreadCount() async {
     final response = await dio.get('/api/notifications/unread-count');
-    return response.data['count'];
+    final data = _handleResponse(response) as Map<String, dynamic>;
+    return data['count'] as int;
   }
 
   Future<void> markRead(String id) async {
-    await dio.post('/api/notifications/$id/read');
+    final response = await dio.post('/api/notifications/$id/read');
+    _handleResponse(response);
   }
 
   Future<void> markAllRead() async {
-    await dio.post('/api/notifications/read-all');
+    final response = await dio.post('/api/notifications/read-all');
+    _handleResponse(response);
   }
 
   // Clients list
@@ -120,28 +149,28 @@ class ApiClient {
     final params = <String, dynamic>{'page': page, 'pageSize': 20};
     if (search != null) params['search'] = search;
     final response = await dio.get('/api/clients', queryParameters: params);
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   // Dashboard charts
   Future<Map<String, dynamic>> getMonthlyHistogram(int year, int quarter) async {
     final response = await dio.get('/api/dashboard/charts/monthly-histogram', queryParameters: {'year': year, 'quarter': quarter});
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> getStatusDistribution(int year, int quarter) async {
     final response = await dio.get('/api/dashboard/charts/status-distribution', queryParameters: {'year': year, 'quarter': quarter});
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   // Finance
   Future<Map<String, dynamic>> recordPayment(String orderId, Map<String, dynamic> data) async {
     final response = await dio.post('/api/orders/$orderId/payments', data: data);
-    return response.data;
+    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   Future<List<dynamic>> getPayments(String orderId) async {
     final response = await dio.get('/api/orders/$orderId/payments');
-    return response.data;
+    return _handleResponse(response) as List<dynamic>;
   }
 }
