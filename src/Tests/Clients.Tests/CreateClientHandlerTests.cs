@@ -39,7 +39,7 @@ public class CreateClientHandlerTests
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*already exists*");
+            .WithMessage("*existe déjà*");
     }
 
     [Fact]

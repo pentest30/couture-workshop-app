@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <InternalsVisibleTo Include="Couture.Notifications.Tests" />
+    <InternalsVisibleTo Include="Couture.Orders.Tests" />
+    <InternalsVisibleTo Include="Couture.Integration.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../Orders.Contracts/Couture.Orders.Contracts.csproj" />
     <ProjectReference Include="../../Clients/Clients/Couture.Clients.csproj" />
   </ItemGroup>

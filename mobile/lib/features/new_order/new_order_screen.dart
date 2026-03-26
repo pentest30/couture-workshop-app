@@ -33,12 +33,7 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
   List<dynamic> _catalogModels = [];
   bool _loadingCatalog = false;
 
-  // New client form
-  bool _showNewClientForm = false;
-  final _newFirstNameController = TextEditingController();
-  final _newLastNameController = TextEditingController();
-  final _newPhoneController = TextEditingController();
-  bool _creatingClient = false;
+  // New client form removed — use /clients/new instead
 
   // Embroidery / beading fields
   final _embroideryDescController = TextEditingController();
@@ -52,9 +47,6 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
     _fabricController.dispose();
     _priceController.dispose();
     _depositController.dispose();
-    _newFirstNameController.dispose();
-    _newLastNameController.dispose();
-    _newPhoneController.dispose();
     _embroideryDescController.dispose();
     _beadingDescController.dispose();
     super.dispose();
@@ -173,37 +165,6 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
     }
   }
 
-  Future<void> _createNewClient() async {
-    final firstName = _newFirstNameController.text.trim();
-    final lastName = _newLastNameController.text.trim();
-    final phone = _newPhoneController.text.trim();
-    if (firstName.isEmpty || lastName.isEmpty || phone.isEmpty) {
-      setState(() => _stepError = 'Veuillez remplir tous les champs du nouveau client.');
-      return;
-    }
-    setState(() { _creatingClient = true; _stepError = null; });
-    try {
-      final client = await ref.read(apiClientProvider).createClient({
-        'firstName': firstName,
-        'lastName': lastName,
-        'primaryPhone': phone,
-      });
-      if (mounted) {
-        setState(() {
-          _selectedClient = client;
-          _showNewClientForm = false;
-          _searchResults = [];
-          _searchController.clear();
-          _creatingClient = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Client ${client['firstName']} ${client['lastName']} cree'), backgroundColor: AppColors.statusPrete),
-        );
-      }
-    } catch (e) {
-      if (mounted) setState(() { _creatingClient = false; _stepError = 'Erreur creation client: $e'; });
-    }
-  }
 
   bool _validateStep() {
     setState(() => _stepError = null);
@@ -403,54 +364,6 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
           hintStyle: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurfaceVariant),
         ),
       ),
-      const SizedBox(height: 12),
-      // + New client button
-      OutlinedButton.icon(
-        onPressed: () => setState(() { _showNewClientForm = !_showNewClientForm; _stepError = null; }),
-        icon: Icon(_showNewClientForm ? Icons.close : Icons.add),
-        label: Text(_showNewClientForm ? 'ANNULER' : 'NOUVEAU CLIENT', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
-        style: OutlinedButton.styleFrom(foregroundColor: AppColors.secondary, side: const BorderSide(color: AppColors.secondaryFixed), shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 12)),
-      ),
-      // New client inline form
-      if (_showNewClientForm) ...[
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.secondaryFixed.withOpacity(0.4))),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('NOUVEAU CLIENT', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.secondary, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _newFirstNameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(labelText: 'Prenom *', labelStyle: GoogleFonts.manrope(fontSize: 13)),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _newLastNameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(labelText: 'Nom *', labelStyle: GoogleFonts.manrope(fontSize: 13)),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _newPhoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(labelText: 'Telephone *', labelStyle: GoogleFonts.manrope(fontSize: 13)),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _creatingClient ? null : _createNewClient,
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 12)),
-                child: _creatingClient
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text('ENREGISTRER', style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 13)),
-              ),
-            ),
-          ]),
-        ),
-      ],
       const SizedBox(height: 16),
       // Search results
       if (_searchResults.isNotEmpty) ...[

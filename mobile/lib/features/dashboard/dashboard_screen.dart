@@ -19,51 +19,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _error;
 
   late int _selectedYear;
-  late int _selectedSemester; // 1 or 2
+  late int _selectedQuarter; // 1-4
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     _selectedYear = now.year;
-    _selectedSemester = now.month <= 6 ? 1 : 2;
+    _selectedQuarter = ((now.month - 1) ~/ 3) + 1;
     _loadData();
   }
 
-  String get _currentSemesterLabel => 'S$_selectedSemester $_selectedYear';
+  String get _currentQuarterLabel => 'T$_selectedQuarter $_selectedYear';
 
-  List<String> get _semesterOptions {
+  List<String> get _quarterOptions {
     final now = DateTime.now();
     final options = <String>[];
     for (var y = now.year; y >= now.year - 2; y--) {
-      options.add('S1 $y');
-      options.add('S2 $y');
+      for (var q = 1; q <= 4; q++) {
+        options.add('T$q $y');
+      }
     }
     return options;
   }
 
-  void _onSemesterChanged(String? value) {
+  void _onQuarterChanged(String? value) {
     if (value == null) return;
     final parts = value.split(' ');
     setState(() {
-      _selectedSemester = int.parse(parts[0].substring(1));
+      _selectedQuarter = int.parse(parts[0].substring(1));
       _selectedYear = int.parse(parts[1]);
     });
     _loadData();
   }
 
+  static const _quarterStarts = {1: '01-01', 2: '04-01', 3: '07-01', 4: '10-01'};
+  static const _quarterEnds = {1: '03-31', 2: '06-30', 3: '09-30', 4: '12-31'};
+
   Future<void> _loadData() async {
     setState(() { _loading = true; _error = null; });
     try {
       final api = ref.read(apiClientProvider);
-      final q1 = _selectedSemester == 1 ? 1 : 3;
-      final dateFrom = _selectedSemester == 1 ? '$_selectedYear-01-01' : '$_selectedYear-07-01';
-      final dateTo = _selectedSemester == 1 ? '$_selectedYear-06-30' : '$_selectedYear-12-31';
+      final dateFrom = '$_selectedYear-${_quarterStarts[_selectedQuarter]}';
+      final dateTo = '$_selectedYear-${_quarterEnds[_selectedQuarter]}';
 
-      // Load KPIs for Q1 only (faster, less prone to failure)
       Map<String, dynamic>? kpiData;
       try {
-        kpiData = await api.getKPIs(_selectedYear, q1).timeout(const Duration(seconds: 10));
+        kpiData = await api.getKPIs(_selectedYear, _selectedQuarter).timeout(const Duration(seconds: 10));
       } catch (_) { kpiData = null; }
 
       // Load recent orders
@@ -117,7 +119,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       children: [
                         _buildHeader(name),
                         const SizedBox(height: 16),
-                        _buildSemesterSelector(),
+                        _buildQuarterSelector(),
                         const SizedBox(height: 16),
                         if ((_kpis?['lateOrders'] ?? 0) > 0) ...[_buildLateAlert(), const SizedBox(height: 16)],
                         _buildKPIGrid(),
@@ -150,7 +152,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ]);
   }
 
-  Widget _buildSemesterSelector() {
+  Widget _buildQuarterSelector() {
     return Container(
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -161,12 +163,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: _currentSemesterLabel,
+          value: _currentQuarterLabel,
           isExpanded: true,
           icon: const Icon(Icons.calendar_month, size: 20, color: AppColors.primary),
           style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface),
-          items: _semesterOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-          onChanged: _onSemesterChanged,
+          items: _quarterOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+          onChanged: _onQuarterChanged,
         ),
       ),
     );
@@ -238,7 +240,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: Text('${onTimeRate.toStringAsFixed(0)}% a temps', style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.statusPrete)),
           ),
         ]),
-        Text('CA encaisse ce semestre', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
+        Text('CA encaisse ce trimestre', style: GoogleFonts.manrope(fontSize: 11, color: AppColors.onSurfaceVariant)),
         const SizedBox(height: 12),
         Row(children: [
           _miniStat('Soldes dus', _formatDZD(outstanding), AppColors.secondary),

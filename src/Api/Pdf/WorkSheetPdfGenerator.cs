@@ -106,7 +106,7 @@ public static class WorkSheetPdfGenerator
                         Cell("Prix", $"{d.TotalPrice:N0} DZD");
                     });
 
-                    // Description
+                    // Descriptione
                     if (!string.IsNullOrWhiteSpace(d.Description))
                     {
                         col.Item().PaddingTop(8).Text("DESCRIPTION").FontSize(9).Bold().FontColor(Colors.Purple.Darken3);

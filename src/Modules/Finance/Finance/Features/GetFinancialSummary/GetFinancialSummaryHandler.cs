@@ -1,6 +1,7 @@
 using Couture.Finance.Contracts.Dtos;
 using Couture.Finance.Domain;
 using Couture.Finance.Persistence;
+using Couture.Orders.Domain;
 using Couture.Orders.Persistence;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -38,13 +39,29 @@ public sealed class GetFinancialSummaryHandler : IQueryHandler<GetFinancialSumma
                 g.Key.Label,
                 g.Sum(p => p.Amount),
                 totalRevenue > 0 ? Math.Round(g.Sum(p => p.Amount) / totalRevenue * 100, 1) : 0))
-            .OrderByDescending(r => r.Amount)
+            .OrderByDescending(r => r.Total)
             .ToList();
+
+        // Recent payments (last 20)
+        var recentPayments = await _financeDb.Payments
+            .AsNoTracking()
+            .Include(p => p.Receipt)
+            .Where(p => p.PaymentDate >= startDate && p.PaymentDate <= endDate)
+            .OrderByDescending(p => p.PaymentDate)
+            .Take(20)
+            .ToListAsync(ct);
+
+        var recentDtos = recentPayments.Select(p => new RecentPaymentDto(
+            p.Id.Value, p.OrderId, p.Amount,
+            p.PaymentMethod.Name, p.PaymentMethod.Label,
+            p.PaymentDate, p.Note,
+            p.Receipt?.Code,
+            p.CreatedAt)).ToList();
 
         // Outstanding balances (orders not delivered)
         var activeOrders = await _ordersDb.Orders
             .AsNoTracking()
-            .Where(o => !o.HasUnpaidBalance && o.Status.Value != 8) // Not Livree
+            .Where(o => o.Status != OrderStatus.Livree)
             .Select(o => new { o.Id, o.Code, o.TotalPrice, o.ClientId })
             .ToListAsync(ct);
 
@@ -82,7 +99,7 @@ public sealed class GetFinancialSummaryHandler : IQueryHandler<GetFinancialSumma
         }
 
         return new FinancialSummaryDto(
-            totalRevenue, byMethod, outstandingTotal, outstandingCount, unpaidList);
+            totalRevenue, byMethod, outstandingTotal, outstandingCount, unpaidList, recentDtos);
     }
 
     private static (DateOnly Start, DateOnly End) GetQuarterDates(int year, int quarter)

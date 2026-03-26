@@ -69,7 +69,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -100,6 +100,7 @@ app.MapDashboardEndpoints();
 app.MapNotificationEndpoints();
 app.MapCatalogEndpoints();
 app.MapUploadEndpoints();
+app.MapUserEndpoints();
 
 // Auto-migrate and seed in development
 if (app.Environment.IsDevelopment())

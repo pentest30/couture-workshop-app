@@ -13,13 +13,13 @@ public sealed class CreateClientHandler : ICommandHandler<CreateClientCommand, C
 
     public async ValueTask<CreateClientResult> Handle(CreateClientCommand command, CancellationToken ct)
     {
-        // Check duplicate phone
+        // Check duplicate phone — block unless caller explicitly confirms
         var existingClient = await _db.Clients
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.PrimaryPhone == command.PrimaryPhone.Trim(), ct);
 
-        if (existingClient is not null)
-            throw new InvalidOperationException($"A client with phone {command.PrimaryPhone} already exists: {existingClient.Code} - {existingClient.FullName}");
+        if (existingClient is not null && !command.ConfirmDuplicate)
+            throw new DuplicatePhoneException(existingClient.Id.Value, existingClient.Code, existingClient.FullName, command.PrimaryPhone.Trim());
 
         // Generate sequential code
         var count = await _db.Clients.CountAsync(ct) + 1;
@@ -34,4 +34,12 @@ public sealed class CreateClientHandler : ICommandHandler<CreateClientCommand, C
 
         return new CreateClientResult(client.Id.Value, client.Code);
     }
+}
+
+public sealed class DuplicatePhoneException(Guid existingClientId, string existingCode, string existingName, string phone) : InvalidOperationException(
+    $"Un client avec le téléphone {phone} existe déjà : {existingCode} — {existingName}")
+{
+    public Guid ExistingClientId { get; } = existingClientId;
+    public string ExistingCode { get; } = existingCode;
+    public string ExistingName { get; } = existingName;
 }

@@ -26,7 +26,7 @@ public class ChangeStatusHandlerTests
         var handler = new ChangeStatusHandler(db);
 
         var result = await handler.Handle(
-            new ChangeStatusCommand(order.Id.Value, "EnCours", null, null, null, null, Guid.NewGuid()),
+            new ChangeStatusCommand(order.Id.Value, "EnCours", null, null, null, null, null, Guid.NewGuid()),
             CancellationToken.None);
 
         result.PreviousStatus.Should().Be("Recue");
@@ -46,7 +46,7 @@ public class ChangeStatusHandlerTests
 
         // Recue -> Prete is invalid
         var act = async () => await handler.Handle(
-            new ChangeStatusCommand(order.Id.Value, "Prete", null, null, null, null, Guid.NewGuid()),
+            new ChangeStatusCommand(order.Id.Value, "Prete", null, null, null, null, null, Guid.NewGuid()),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -60,7 +60,7 @@ public class ChangeStatusHandlerTests
         var handler = new ChangeStatusHandler(db);
 
         var act = async () => await handler.Handle(
-            new ChangeStatusCommand(Guid.NewGuid(), "EnCours", null, null, null, null, Guid.NewGuid()),
+            new ChangeStatusCommand(Guid.NewGuid(), "EnCours", null, null, null, null, null, Guid.NewGuid()),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -76,12 +76,12 @@ public class ChangeStatusHandlerTests
 
         // First move to EnCours
         await handler.Handle(
-            new ChangeStatusCommand(order.Id.Value, "EnCours", null, null, null, null, Guid.NewGuid()),
+            new ChangeStatusCommand(order.Id.Value, "EnCours", null, null, null, null, null, Guid.NewGuid()),
             CancellationToken.None);
 
         // Then try Retouche without reason
         var act = async () => await handler.Handle(
-            new ChangeStatusCommand(order.Id.Value, "Retouche", null, null, null, null, Guid.NewGuid()),
+            new ChangeStatusCommand(order.Id.Value, "Retouche", null, null, null, null, null, Guid.NewGuid()),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -97,11 +97,11 @@ public class ChangeStatusHandlerTests
         var embroidererId = Guid.NewGuid();
 
         await handler.Handle(
-            new ChangeStatusCommand(order.Id.Value, "EnCours", null, null, null, null, Guid.NewGuid()),
+            new ChangeStatusCommand(order.Id.Value, "EnCours", null, null, null, null, null, Guid.NewGuid()),
             CancellationToken.None);
 
         var result = await handler.Handle(
-            new ChangeStatusCommand(order.Id.Value, "Broderie", null, embroidererId, null, null, Guid.NewGuid()),
+            new ChangeStatusCommand(order.Id.Value, "Broderie", null, null, embroidererId, null, null, Guid.NewGuid()),
             CancellationToken.None);
 
         result.NewStatus.Should().Be("Broderie");

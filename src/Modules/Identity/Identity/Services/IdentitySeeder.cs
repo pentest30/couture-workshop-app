@@ -25,6 +25,7 @@ public sealed class IdentitySeeder
     {
         await SeedRolesAsync();
         await SeedAdminUserAsync();
+        await SeedArtisansAsync();
     }
 
     private async Task SeedRolesAsync()
@@ -69,6 +70,43 @@ public sealed class IdentitySeeder
         else
         {
             _logger.LogError("Failed to seed admin: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+    }
+
+    private async Task SeedArtisansAsync()
+    {
+        var artisans = new (string Email, string FirstName, string LastName, string Phone, string[] Roles)[]
+        {
+            ("fatima@couture.local", "Fatima", "Benali", "0551000001", [CoutureRoles.Tailor]),
+            ("amina@couture.local", "Amina", "Kaci", "0551000002", [CoutureRoles.Tailor]),
+            ("sara@couture.local", "Sara", "Merabet", "0551000003", [CoutureRoles.Tailor, CoutureRoles.Embroiderer]),
+            ("khadija@couture.local", "Khadija", "Boudiaf", "0551000004", [CoutureRoles.Embroiderer]),
+            ("nadia@couture.local", "Nadia", "Hamidi", "0551000005", [CoutureRoles.Beader]),
+            ("yasmine@couture.local", "Yasmine", "Ouali", "0551000006", [CoutureRoles.Beader]),
+            ("rachid@couture.local", "Rachid", "Bouzid", "0551000007", [CoutureRoles.Cashier]),
+        };
+
+        foreach (var (email, firstName, lastName, phone, roles) in artisans)
+        {
+            if (await _userManager.FindByEmailAsync(email) is not null) continue;
+
+            var user = new CoutureUser
+            {
+                UserName = email,
+                Email = email,
+                FirstName = firstName,
+                LastName = lastName,
+                PhoneNumber = phone,
+                EmailConfirmed = true,
+                IsActive = true,
+            };
+
+            var result = await _userManager.CreateAsync(user, "Artisan123!");
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRolesAsync(user, roles);
+                _logger.LogInformation("Seeded artisan: {Name} ({Roles})", $"{firstName} {lastName}", string.Join(", ", roles));
+            }
         }
     }
 }

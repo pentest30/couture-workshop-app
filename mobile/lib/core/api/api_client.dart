@@ -9,7 +9,7 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  static const baseUrl = 'http://192.168.100.80:5000'; // LAN IP (phone must be on same Wi-Fi)
+  static const baseUrl = 'http://192.168.100.80:5000'; // LAN IP for physical device
 
   late final Dio dio;
   String? _token;
@@ -87,15 +87,23 @@ class ApiClient {
     return _handleResponse(response) as Map<String, dynamic>;
   }
 
-  Future<Map<String, dynamic>> changeStatus(String orderId, String newStatus, {String? reason, String? embroidererId, String? beaderId, String? actualDeliveryDate}) async {
+  Future<Map<String, dynamic>> changeStatus(String orderId, String newStatus, {String? reason, String? tailorId, String? embroidererId, String? beaderId, String? actualDeliveryDate}) async {
     final response = await dio.post('/api/orders/$orderId/status', data: {
       'newStatus': newStatus,
       if (reason != null) 'reason': reason,
+      if (tailorId != null) 'assignedTailorId': tailorId,
       if (embroidererId != null) 'assignedEmbroidererId': embroidererId,
       if (beaderId != null) 'assignedBeaderId': beaderId,
       if (actualDeliveryDate != null) 'actualDeliveryDate': actualDeliveryDate,
     });
     return _handleResponse(response) as Map<String, dynamic>;
+  }
+
+  // Users
+  Future<List<Map<String, dynamic>>> listUsersByRole(String role) async {
+    final response = await dio.get('/api/users', queryParameters: {'role': role, 'activeOnly': 'true'});
+    final data = _handleResponse(response) as Map<String, dynamic>;
+    return List<Map<String, dynamic>>.from(data['items'] ?? []);
   }
 
   Future<Map<String, dynamic>> createOrder(Map<String, dynamic> data) async {

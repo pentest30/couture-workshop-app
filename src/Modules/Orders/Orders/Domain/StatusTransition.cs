@@ -10,7 +10,7 @@ public sealed class StatusTransition
     public OrderStatus ToStatus { get; private set; } = default!;
     public string? Reason { get; private set; }
     public string TransitionedBy { get; private set; } = default!;
-    public DateTimeOffset TransitionedAt { get; private set; }
+    public DateTimeOffset TransitionedAt { get; set; }
 
     private StatusTransition() { }
 

@@ -42,13 +42,13 @@ public class OrderLifecycleTests
 
         var statusHandler = new ChangeStatusHandler(dbs.Orders);
         var statusResult = await statusHandler.Handle(
-            new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, tailorId),
+            new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, null, tailorId),
             CancellationToken.None);
         statusResult.NewStatus.Should().Be("EnCours");
 
         // Step 4: Move to Prete
         await statusHandler.Handle(
-            new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, tailorId),
+            new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, null, tailorId),
             CancellationToken.None);
 
         // Step 5: Record remaining payment
@@ -62,7 +62,7 @@ public class OrderLifecycleTests
 
         // Step 6: Deliver (with reason because InMemory DB can't cross-schema query payments)
         await statusHandler.Handle(
-            new ChangeStatusCommand(order.OrderId, "Livree", "Solde payé en main propre", null, null,
+            new ChangeStatusCommand(order.OrderId, "Livree", "Solde payé en main propre", null, null, null,
                 DateOnly.FromDateTime(DateTime.UtcNow), tailorId),
             CancellationToken.None);
 
@@ -102,18 +102,18 @@ public class OrderLifecycleTests
 
         // Move to EnCours
         await statusHandler.Handle(
-            new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, tailorId),
+            new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, null, tailorId),
             CancellationToken.None);
 
         // Move to Broderie
         var result = await statusHandler.Handle(
-            new ChangeStatusCommand(order.OrderId, "Broderie", null, embroidererId, null, null, tailorId),
+            new ChangeStatusCommand(order.OrderId, "Broderie", null, null, embroidererId, null, null, tailorId),
             CancellationToken.None);
         result.NewStatus.Should().Be("Broderie");
 
         // Move to Prete
         await statusHandler.Handle(
-            new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, embroidererId),
+            new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, null, embroidererId),
             CancellationToken.None);
 
         var finalOrder = dbs.Orders.Orders.First();
@@ -149,10 +149,10 @@ public class OrderLifecycleTests
         var statusHandler = new ChangeStatusHandler(dbs.Orders);
 
         // Recue -> EnCours -> Broderie -> Perlage -> Prete
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, tailorId), CancellationToken.None);
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Broderie", null, embroidererId, null, null, tailorId), CancellationToken.None);
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Perlage", null, null, beaderId, null, embroidererId), CancellationToken.None);
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, beaderId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, null, tailorId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Broderie", null, null, embroidererId, null, null, tailorId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Perlage", null, null, null, beaderId, null, embroidererId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, null, beaderId), CancellationToken.None);
 
         var finalOrder = dbs.Orders.Orders.First();
         finalOrder.Status.Should().Be(OrderStatus.Prete);
@@ -183,10 +183,10 @@ public class OrderLifecycleTests
         var statusHandler = new ChangeStatusHandler(dbs.Orders);
 
         // EnCours -> Retouche (with reason) -> EnCours -> Prete
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, tailorId), CancellationToken.None);
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Retouche", "Ajustement taille", null, null, null, tailorId), CancellationToken.None);
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, tailorId), CancellationToken.None);
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, tailorId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, null, tailorId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Retouche", "Ajustement taille", null, null, null, null, tailorId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, null, tailorId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, null, tailorId), CancellationToken.None);
 
         var finalOrder = dbs.Orders.Orders.First();
         finalOrder.Status.Should().Be(OrderStatus.Prete);
@@ -216,14 +216,14 @@ public class OrderLifecycleTests
         await dbs.Orders.SaveChangesAsync();
 
         var statusHandler = new ChangeStatusHandler(dbs.Orders);
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, tailorId), CancellationToken.None);
-        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, tailorId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "EnCours", null, null, null, null, null, tailorId), CancellationToken.None);
+        await statusHandler.Handle(new ChangeStatusCommand(order.OrderId, "Prete", null, null, null, null, null, tailorId), CancellationToken.None);
 
         // Deliver with unpaid - pass a reason for the unpaid delivery
         // Note: ChangeStatusHandler currently passes outstandingBalance=0 to MarkAsDelivered (TODO),
         // so HasUnpaidBalance will be false until that TODO is resolved.
         var deliverResult = await statusHandler.Handle(
-            new ChangeStatusCommand(order.OrderId, "Livree", "Client paie semaine prochaine", null, null,
+            new ChangeStatusCommand(order.OrderId, "Livree", "Client paie semaine prochaine", null, null, null,
                 DateOnly.FromDateTime(DateTime.UtcNow), tailorId),
             CancellationToken.None);
 

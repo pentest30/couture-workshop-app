@@ -9,5 +9,6 @@ public sealed record StatusChangedEvent(
     string ToStatus,
     string? Reason,
     Guid ChangedByUserId,
+    Guid? AssignedTailorId,
     Guid? AssignedEmbroidererId,
     Guid? AssignedBeaderId) : IDomainEvent;

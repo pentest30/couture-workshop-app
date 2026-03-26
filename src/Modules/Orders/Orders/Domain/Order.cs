@@ -136,7 +136,7 @@ public sealed class Order : AggregateRoot
         {
             RaiseDomainEvent(new StatusChangedEvent(
                 Id, Code, previousStatus.Name, newStatus.Name, reason, changedByUserId,
-                AssignedEmbroidererId, AssignedBeaderId));
+                AssignedTailorId, AssignedEmbroidererId, AssignedBeaderId));
         }
     }
 

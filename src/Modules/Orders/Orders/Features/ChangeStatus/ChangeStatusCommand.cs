@@ -6,6 +6,7 @@ public sealed record ChangeStatusCommand(
     Guid OrderId,
     string NewStatus,
     string? Reason,
+    Guid? AssignedTailorId,
     Guid? AssignedEmbroidererId,
     Guid? AssignedBeaderId,
     DateOnly? ActualDeliveryDate,

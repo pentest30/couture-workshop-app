@@ -23,17 +23,17 @@ public sealed class ChangeStatusHandler : ICommandHandler<ChangeStatusCommand, C
         var newStatus = OrderStatus.FromName(command.NewStatus, ignoreCase: true);
         var previousStatus = order.Status.Name;
 
-        // Auto-assign current user as tailor if moving to EnCours and no tailor set
-        if (newStatus == OrderStatus.EnCours && order.AssignedTailorId is null)
-            order.Update(assignedTailorId: command.ChangedByUserId);
-
         // Update artisan assignments if provided
+        if (command.AssignedTailorId.HasValue)
+            order.Update(assignedTailorId: command.AssignedTailorId);
         if (command.AssignedEmbroidererId.HasValue)
             order.Update(assignedEmbroidererId: command.AssignedEmbroidererId);
         if (command.AssignedBeaderId.HasValue)
             order.Update(assignedBeaderId: command.AssignedBeaderId);
 
-        // Auto-assign current user as embroiderer/beader if needed and not set
+        // Fallback: auto-assign current user if no artisan was provided and none set
+        if (newStatus == OrderStatus.EnCours && order.AssignedTailorId is null)
+            order.Update(assignedTailorId: command.ChangedByUserId);
         if (newStatus == OrderStatus.Broderie && order.AssignedEmbroidererId is null)
             order.Update(assignedEmbroidererId: command.ChangedByUserId);
         if (newStatus == OrderStatus.Perlage && order.AssignedBeaderId is null)

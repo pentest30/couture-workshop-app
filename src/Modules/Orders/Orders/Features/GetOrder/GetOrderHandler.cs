@@ -59,6 +59,29 @@ public sealed class GetOrderHandler : IQueryHandler<GetOrderQuery, OrderDetailDt
         var isLate = !order.Status.IsTerminal && order.ExpectedDeliveryDate < DateOnly.FromDateTime(DateTime.UtcNow);
         var delayDays = isLate ? (DateOnly.FromDateTime(DateTime.UtcNow).DayNumber - order.ExpectedDeliveryDate.DayNumber) : 0;
 
+        // Resolve artisan names from identity schema
+        var artisanIds = new[] { order.AssignedTailorId, order.AssignedEmbroidererId, order.AssignedBeaderId }
+            .Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+        var artisanNames = new Dictionary<Guid, string>();
+        if (artisanIds.Count > 0)
+        {
+            try
+            {
+                var conn = _db.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync(ct);
+                foreach (var aid in artisanIds)
+                {
+                    await using var cmd = conn.CreateCommand();
+                    cmd.CommandText = "SELECT \"FirstName\" || ' ' || \"LastName\" FROM identity.users WHERE \"Id\" = @id";
+                    var p = cmd.CreateParameter(); p.ParameterName = "@id"; p.Value = aid;
+                    cmd.Parameters.Add(p);
+                    var result = await cmd.ExecuteScalarAsync(ct);
+                    if (result is string name) artisanNames[aid] = name;
+                }
+            }
+            catch { /* identity schema may not exist in tests */ }
+        }
+
         return new OrderDetailDto(
             order.Id.Value, order.Code, order.ClientId, clientName,
             order.Status.Name, order.Status.Label, order.Status.Color,
@@ -67,9 +90,14 @@ public sealed class GetOrderHandler : IQueryHandler<GetOrderQuery, OrderDetailDt
             order.EmbroideryStyle, order.ThreadColors, order.Density, order.EmbroideryZone,
             order.BeadType, order.Arrangement, order.AffectedZones,
             order.ReceptionDate, order.ExpectedDeliveryDate, order.ActualDeliveryDate,
-            order.TotalPrice, 0, // OutstandingBalance computed when payments module joins
+            order.TotalPrice, 0,
             delayDays, isLate,
-            order.AssignedTailorId, order.AssignedEmbroidererId, order.AssignedBeaderId,
+            order.AssignedTailorId,
+            order.AssignedTailorId.HasValue ? artisanNames.GetValueOrDefault(order.AssignedTailorId.Value) : null,
+            order.AssignedEmbroidererId,
+            order.AssignedEmbroidererId.HasValue ? artisanNames.GetValueOrDefault(order.AssignedEmbroidererId.Value) : null,
+            order.AssignedBeaderId,
+            order.AssignedBeaderId.HasValue ? artisanNames.GetValueOrDefault(order.AssignedBeaderId.Value) : null,
             order.HasUnpaidBalance,
             order.CatalogModelId,
             timeline,

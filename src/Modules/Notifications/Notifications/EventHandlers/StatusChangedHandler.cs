@@ -34,5 +34,31 @@ public sealed class StatusChangedHandler : INotificationHandler<StatusChangedEve
                 $"Commande {evt.OrderCode} est prête pour la livraison.",
                 ct: ct);
         }
+
+        // N07: Artisan assigned — notify the assigned artisan
+        if (evt.AssignedTailorId.HasValue && evt.ToStatus == "EnCours")
+        {
+            await _notificationService.CreateAndSendAsync(
+                NotificationType.N07_Assigned, evt.OrderId.Value, evt.AssignedTailorId.Value,
+                $"Nouvelle assignation — {evt.OrderCode}",
+                $"Commande {evt.OrderCode} vous a été assignée en tant que couturière.",
+                ct: ct);
+        }
+        if (evt.AssignedEmbroidererId.HasValue && evt.ToStatus == "Broderie")
+        {
+            await _notificationService.CreateAndSendAsync(
+                NotificationType.N07_Assigned, evt.OrderId.Value, evt.AssignedEmbroidererId.Value,
+                $"Nouvelle assignation — {evt.OrderCode}",
+                $"Commande {evt.OrderCode} vous a été assignée en broderie.",
+                ct: ct);
+        }
+        if (evt.AssignedBeaderId.HasValue && evt.ToStatus == "Perlage")
+        {
+            await _notificationService.CreateAndSendAsync(
+                NotificationType.N07_Assigned, evt.OrderId.Value, evt.AssignedBeaderId.Value,
+                $"Nouvelle assignation — {evt.OrderCode}",
+                $"Commande {evt.OrderCode} vous a été assignée en perlage.",
+                ct: ct);
+        }
     }
 }

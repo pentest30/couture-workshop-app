@@ -18,9 +18,9 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
   bool _loading = true;
   String? _error;
 
-  // Semester filter
+  // Quarter filter
   late int _selectedYear;
-  late int _selectedSemester; // 1 or 2
+  late int _selectedQuarter; // 1-4
   String? _selectedStatus; // null = all
 
   static const _allStatuses = [
@@ -39,38 +39,36 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedYear = now.year;
-    _selectedSemester = now.month <= 6 ? 1 : 2;
+    _selectedQuarter = ((now.month - 1) ~/ 3) + 1;
     _loadOrders();
   }
 
-  (String, String) get _semesterDates {
-    if (_selectedSemester == 1) {
-      return ('$_selectedYear-01-01', '$_selectedYear-06-30');
-    } else {
-      return ('$_selectedYear-07-01', '$_selectedYear-12-31');
-    }
+  static const _quarterStarts = {1: '01-01', 2: '04-01', 3: '07-01', 4: '10-01'};
+  static const _quarterEnds = {1: '03-31', 2: '06-30', 3: '09-30', 4: '12-31'};
+
+  (String, String) get _quarterDates {
+    return ('$_selectedYear-${_quarterStarts[_selectedQuarter]}', '$_selectedYear-${_quarterEnds[_selectedQuarter]}');
   }
 
-  List<String> get _semesterOptions {
+  List<String> get _quarterOptions {
     final now = DateTime.now();
     final options = <String>[];
     for (var y = now.year; y >= now.year - 2; y--) {
-      options.add('S1 $y');
-      options.add('S2 $y');
+      for (var q = 1; q <= 4; q++) {
+        options.add('T$q $y');
+      }
     }
     return options;
   }
 
-  String get _currentSemesterLabel => 'S$_selectedSemester $_selectedYear';
+  String get _currentQuarterLabel => 'T$_selectedQuarter $_selectedYear';
 
-  void _onSemesterChanged(String? value) {
+  void _onQuarterChanged(String? value) {
     if (value == null) return;
     final parts = value.split(' ');
-    final sem = int.parse(parts[0].substring(1));
-    final year = int.parse(parts[1]);
     setState(() {
-      _selectedSemester = sem;
-      _selectedYear = year;
+      _selectedQuarter = int.parse(parts[0].substring(1));
+      _selectedYear = int.parse(parts[1]);
     });
     _loadOrders();
   }
@@ -79,7 +77,7 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final api = ref.read(apiClientProvider);
-      final dates = _semesterDates;
+      final dates = _quarterDates;
       final data = await api.getOrders(
         status: _selectedStatus,
         dateFrom: dates.$1,
@@ -108,9 +106,9 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
               Text('Commandes', style: GoogleFonts.notoSerif(fontSize: 24, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
 
-              // Semester + Status filters row
+              // Quarter + Status filters row
               Row(children: [
-                // Semester dropdown
+                // Quarter dropdown
                 Expanded(
                   child: Container(
                     height: 40,
@@ -122,12 +120,12 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> {
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: _currentSemesterLabel,
+                        value: _currentQuarterLabel,
                         isExpanded: true,
                         icon: const Icon(Icons.calendar_month, size: 18, color: AppColors.primary),
                         style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.onSurface),
-                        items: _semesterOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                        onChanged: _onSemesterChanged,
+                        items: _quarterOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                        onChanged: _onQuarterChanged,
                       ),
                     ),
                   ),

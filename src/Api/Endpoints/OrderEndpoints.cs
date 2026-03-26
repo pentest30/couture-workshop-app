@@ -95,7 +95,7 @@ public static class OrderEndpoints
         {
             var command = new ChangeStatusCommand(
                 id, request.NewStatus, request.Reason,
-                request.AssignedEmbroidererId, request.AssignedBeaderId,
+                request.AssignedTailorId, request.AssignedEmbroidererId, request.AssignedBeaderId,
                 request.ActualDeliveryDate, currentUser.UserId);
             var result = await mediator.Send(command);
             return Results.Ok(result);
@@ -201,4 +201,4 @@ public static class OrderEndpoints
     }
 }
 
-public record ChangeStatusRequest(string NewStatus, string? Reason, Guid? AssignedEmbroidererId, Guid? AssignedBeaderId, DateOnly? ActualDeliveryDate);
+public record ChangeStatusRequest(string NewStatus, string? Reason, Guid? AssignedTailorId, Guid? AssignedEmbroidererId, Guid? AssignedBeaderId, DateOnly? ActualDeliveryDate);

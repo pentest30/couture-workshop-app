@@ -6,10 +6,10 @@ public sealed class NotificationConfig
     public NotificationType Type { get; private set; } = default!;
     public bool IsEnabled { get; private set; } = true;
     public bool SmsEnabled { get; private set; }
-    public int StallThresholdSimple { get; private set; } = 3;
+    public int StallThresholdSimple { get; private set; } = 7;
     public int StallThresholdEmbroidered { get; private set; } = 7;
-    public int StallThresholdBeaded { get; private set; } = 10;
-    public int StallThresholdMixed { get; private set; } = 14;
+    public int StallThresholdBeaded { get; private set; } = 7;
+    public int StallThresholdMixed { get; private set; } = 7;
     public TimeOnly SmsWindowStart { get; private set; } = new(8, 0);
     public TimeOnly SmsWindowEnd { get; private set; } = new(20, 0);
 

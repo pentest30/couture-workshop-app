@@ -1,4 +1,5 @@
 using Couture.Clients.Features.CreateClient;
+using DuplicatePhoneException = Couture.Clients.Features.CreateClient.DuplicatePhoneException;
 using Couture.Clients.Features.GetClient;
 using Couture.Clients.Features.GetMeasurementHistory;
 using Couture.Clients.Features.ListClients;
@@ -44,9 +45,16 @@ public static class ClientEndpoints
             var result = await mediator.Send(command);
             return Results.Created($"/api/clients/{result.ClientId}", result);
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+        catch (DuplicatePhoneException ex)
         {
-            return Results.Conflict(new { error = ex.Message });
+            return Results.Conflict(new
+            {
+                error = ex.Message,
+                duplicate = true,
+                existingClientId = ex.ExistingClientId,
+                existingCode = ex.ExistingCode,
+                existingName = ex.ExistingName,
+            });
         }
         catch (Exception ex)
         {

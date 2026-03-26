@@ -9,6 +9,7 @@ public sealed record CreateClientCommand(
     string? SecondaryPhone,
     string? Address,
     DateOnly? DateOfBirth,
-    string? Notes) : ICommand<CreateClientResult>;
+    string? Notes,
+    bool ConfirmDuplicate = false) : ICommand<CreateClientResult>;
 
 public sealed record CreateClientResult(Guid ClientId, string Code);
