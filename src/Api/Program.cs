@@ -9,6 +9,7 @@ using Couture.Notifications.Persistence;
 using Couture.Catalog.Persistence;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
+using Scalar.AspNetCore;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -78,8 +79,16 @@ builder.Services.AddCors(options =>
 
 // OpenAPI
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// OpenAPI + Scalar
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.WithTitle("Couture Workshop API");
+});
 
 // Static files for uploads
 app.UseStaticFiles();
