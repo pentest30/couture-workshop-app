@@ -102,8 +102,7 @@ app.MapCatalogEndpoints();
 app.MapUploadEndpoints();
 app.MapUserEndpoints();
 
-// Auto-migrate and seed in development
-if (app.Environment.IsDevelopment())
+// Auto-migrate and seed
 {
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
@@ -119,13 +118,14 @@ if (app.Environment.IsDevelopment())
     await services.GetRequiredService<NotificationsDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<CatalogDbContext>().Database.MigrateAsync();
 
-    logger.LogInformation("Seeding data...");
-
-    // Seed identity (roles + admin user)
+    // Seed identity (roles + admin user) in all environments
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
 
-    // Seed sample data
-    await SeedSampleDataAsync(services, logger);
+    if (app.Environment.IsDevelopment())
+    {
+        logger.LogInformation("Seeding sample data...");
+        await SeedSampleDataAsync(services, logger);
+    }
 
     logger.LogInformation("Startup complete.");
 }
