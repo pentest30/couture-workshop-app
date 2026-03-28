@@ -6,8 +6,8 @@ RUN npm ci
 
 COPY . .
 
-# Build-time env: API proxy target inside Docker network
-ENV NEXT_PRIVATE_API_URL=http://api:5000
+ARG NEXT_PRIVATE_API_URL=http://api:5000
+ENV NEXT_PRIVATE_API_URL=$NEXT_PRIVATE_API_URL
 
 RUN mkdir -p public
 RUN npm run build
