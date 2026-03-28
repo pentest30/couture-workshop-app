@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: couture-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: couture_prod
+      POSTGRES_USER: couture
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ChangeMeInProduction!}
+    volumes:
+      - couture_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U couture -d couture_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - couture
+
+  api:
+    build:
+      context: ./src
+      dockerfile: Api/Dockerfile
+    container_name: couture-api
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=couture_prod;Username=couture;Password=${DB_PASSWORD:-ChangeMeInProduction!}"
+      Jwt__SecretKey: ${JWT_SECRET:-ChangeThisToA64CharRandomSecretKeyForProduction1234567890ABCDEF}
+      Jwt__Issuer: couture-api
+      Jwt__Audience: couture-app
+      Jwt__ExpiryHours: "24"
+    volumes:
+      - couture_uploads:/app/wwwroot/uploads
+    networks:
+      - couture
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PRIVATE_API_URL: http://api:5000
+    container_name: couture-web
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-80}:3000"
+    environment:
+      NEXT_PRIVATE_API_URL: http://api:5000
+    networks:
+      - couture
+
+volumes:
+  couture_pgdata:
+  couture_uploads:
+
+networks:
+  couture:
+    driver: bridge
