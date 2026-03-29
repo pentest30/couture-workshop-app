@@ -1,28 +1,20 @@
 'use client';
 import { useState } from 'react';
-import { clients } from '@/lib/api';
+import { clients, measurementFields as fieldsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { ArrowLeft, User, Phone, MapPin, FileText, Ruler } from 'lucide-react';
-
-const DEFAULT_MEASUREMENTS = [
-  { name: 'Tour de poitrine', unit: 'cm' },
-  { name: 'Tour de taille', unit: 'cm' },
-  { name: 'Tour de hanches', unit: 'cm' },
-  { name: 'Longueur robe (dos)', unit: 'cm' },
-  { name: 'Longueur jupe', unit: 'cm' },
-  { name: 'Longueur manche', unit: 'cm' },
-  { name: 'Tour de bras', unit: 'cm' },
-  { name: 'Épaule', unit: 'cm' },
-  { name: 'Carrure dos', unit: 'cm' },
-  { name: 'Hauteur totale', unit: 'cm' },
-];
+import { ArrowLeft, User, Phone, MapPin, FileText, Ruler, Plus, Trash2 } from 'lucide-react';
 
 export default function NewClientPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // Measurement fields from API
+  const { data: fields } = useQuery({ queryKey: ['measurement-fields'], queryFn: () => fieldsApi.list() });
 
   // Client info
   const [firstName, setFirstName] = useState('');
@@ -36,14 +28,33 @@ export default function NewClientPage() {
   // Measurements
   const [measurements, setMeasurements] = useState<Record<string, string>>({});
 
+  // Add custom field
+  const [newFieldName, setNewFieldName] = useState('');
+  const [addingField, setAddingField] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState<{
     existingClientId: string; existingCode: string; existingName: string;
   } | null>(null);
 
-  const updateMeasurement = (name: string, value: string) => {
-    setMeasurements(prev => ({ ...prev, [name]: value }));
+  const handleAddField = async () => {
+    if (!newFieldName.trim()) return;
+    setAddingField(true);
+    try {
+      await fieldsApi.create({ name: newFieldName.trim(), unit: 'cm', displayOrder: (fields?.length ?? 0) + 1 });
+      queryClient.invalidateQueries({ queryKey: ['measurement-fields'] });
+      setNewFieldName('');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Erreur'); }
+    setAddingField(false);
+  };
+
+  const handleRemoveField = async (fieldId: string, fieldName: string) => {
+    if (!confirm(`Supprimer "${fieldName}" ?`)) return;
+    try {
+      await fieldsApi.remove(fieldId);
+      queryClient.invalidateQueries({ queryKey: ['measurement-fields'] });
+    } catch (e) { alert(e instanceof Error ? e.message : 'Erreur'); }
   };
 
   const submitClient = async (confirmDuplicate = false) => {
@@ -71,18 +82,10 @@ export default function NewClientPage() {
       // Save measurements if any are filled
       const filledMeasurements = Object.entries(measurements)
         .filter(([, v]) => v && parseFloat(v) > 0)
-        .map(([fieldName, value]) => ({
-          fieldName,
-          value: parseFloat(value),
-          unit: 'cm',
-        }));
+        .map(([fieldName, value]) => ({ fieldName, value: parseFloat(value), unit: 'cm' }));
 
       if (filledMeasurements.length > 0) {
-        try {
-          await clients.saveMeasurements(result.id, filledMeasurements);
-        } catch {
-          // Non-blocking — client is already created
-        }
+        try { await clients.saveMeasurements(result.id, filledMeasurements); } catch {}
       }
 
       router.push(`/clients/${result.id}`);
@@ -190,27 +193,48 @@ export default function NewClientPage() {
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">Renseignez les mesures disponibles. Les champs vides seront ignorés.</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-              {DEFAULT_MEASUREMENTS.map((m) => (
-                <div key={m.name}>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    {m.name}
-                  </label>
+              {fields?.map((f) => (
+                <div key={f.id} className="group">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-medium text-muted-foreground">{f.name}</label>
+                    <button onClick={() => handleRemoveField(f.id, f.name)}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/10 text-destructive transition-all"
+                      title="Supprimer ce champ">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
                   <div className="relative">
                     <Input
                       type="number"
-                      value={measurements[m.name] || ''}
-                      onChange={e => updateMeasurement(m.name, e.target.value)}
+                      value={measurements[f.name] || ''}
+                      onChange={e => setMeasurements(prev => ({ ...prev, [f.name]: e.target.value }))}
                       placeholder="—"
                       className="pr-10"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                      {m.unit}
+                      {f.unit}
                     </span>
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Add custom field */}
+            <div className="border-t pt-3">
+              <p className="text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2">
+                <Plus className="h-3 w-3 inline mr-1" /> Ajouter un champ
+              </p>
+              <div className="flex items-center gap-2">
+                <Input value={newFieldName} onChange={e => setNewFieldName(e.target.value)}
+                  placeholder="Nom (ex: Tour de cou)" className="flex-1 h-9"
+                  onKeyDown={e => e.key === 'Enter' && handleAddField()} />
+                <Button onClick={handleAddField} disabled={addingField || !newFieldName.trim()}
+                  size="sm" variant="outline" className="rounded-full h-9 px-3">
+                  {addingField ? '...' : 'Ajouter'}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

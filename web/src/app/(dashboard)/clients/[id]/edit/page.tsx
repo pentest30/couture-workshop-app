@@ -1,20 +1,14 @@
 'use client';
 import { use, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { clients } from '@/lib/api';
+import { clients, measurementFields as fieldsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, User, Phone, MapPin, FileText, Ruler, Save } from 'lucide-react';
-
-const DEFAULT_MEASUREMENTS = [
-  'Tour de poitrine', 'Tour de taille', 'Tour de hanches',
-  'Longueur robe (dos)', 'Longueur jupe', 'Longueur manche',
-  'Tour de bras', 'Épaule', 'Carrure dos', 'Hauteur totale',
-];
+import { ArrowLeft, User, Phone, MapPin, FileText, Ruler, Save, Plus, Trash2 } from 'lucide-react';
 
 export default function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -22,6 +16,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const queryClient = useQueryClient();
   const { data: client } = useQuery({ queryKey: ['client', id], queryFn: () => clients.get(id) });
   const { data: measurements } = useQuery({ queryKey: ['measurements', id], queryFn: () => clients.getMeasurements(id) });
+  const { data: fields } = useQuery({ queryKey: ['measurement-fields'], queryFn: () => fieldsApi.list() });
 
   // Client fields
   const [firstName, setFirstName] = useState('');
@@ -33,6 +28,10 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
   // Measurements
   const [measValues, setMeasValues] = useState<Record<string, string>>({});
+
+  // Add custom field
+  const [newFieldName, setNewFieldName] = useState('');
+  const [addingField, setAddingField] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [savingMeas, setSavingMeas] = useState(false);
@@ -91,6 +90,25 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       setSuccess('Mensurations enregistrées');
     } catch (e) { setError(e instanceof Error ? e.message : 'Erreur'); }
     setSavingMeas(false);
+  };
+
+  const handleAddField = async () => {
+    if (!newFieldName.trim()) return;
+    setAddingField(true);
+    try {
+      await fieldsApi.create({ name: newFieldName.trim(), unit: 'cm', displayOrder: (fields?.length ?? 0) + 1 });
+      queryClient.invalidateQueries({ queryKey: ['measurement-fields'] });
+      setNewFieldName('');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Erreur'); }
+    setAddingField(false);
+  };
+
+  const handleRemoveField = async (fieldId: string, fieldName: string) => {
+    if (!confirm(`Supprimer "${fieldName}" ?`)) return;
+    try {
+      await fieldsApi.remove(fieldId);
+      queryClient.invalidateQueries({ queryKey: ['measurement-fields'] });
+    } catch (e) { alert(e instanceof Error ? e.message : 'Erreur'); }
   };
 
   return (
@@ -159,20 +177,44 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">Modifiez les mesures. Les champs vides seront ignorés.</p>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-              {DEFAULT_MEASUREMENTS.map(name => (
-                <div key={name}>
-                  <Label className="text-xs">{name}</Label>
-                  <div className="relative mt-1">
-                    <Input type="number" value={measValues[name] || ''} placeholder="—"
-                      onChange={e => setMeasValues(prev => ({ ...prev, [name]: e.target.value }))}
+              {fields?.map(f => (
+                <div key={f.id} className="group">
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-xs">{f.name}</Label>
+                    <button onClick={() => handleRemoveField(f.id, f.name)}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/10 text-destructive transition-all"
+                      title="Supprimer ce champ">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Input type="number" value={measValues[f.name] || ''} placeholder="—"
+                      onChange={e => setMeasValues(prev => ({ ...prev, [f.name]: e.target.value }))}
                       className="pr-10" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">cm</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{f.unit}</span>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Add custom field */}
+            <div className="border-t pt-3">
+              <p className="text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2">
+                <Plus className="h-3 w-3 inline mr-1" /> Ajouter un champ
+              </p>
+              <div className="flex items-center gap-2">
+                <Input value={newFieldName} onChange={e => setNewFieldName(e.target.value)}
+                  placeholder="Nom (ex: Tour de cou)" className="flex-1 h-9"
+                  onKeyDown={e => e.key === 'Enter' && handleAddField()} />
+                <Button onClick={handleAddField} disabled={addingField || !newFieldName.trim()}
+                  size="sm" variant="outline" className="rounded-full h-9 px-3">
+                  {addingField ? '...' : 'Ajouter'}
+                </Button>
+              </div>
+            </div>
+
             <Button onClick={handleSaveMeasurements} disabled={savingMeas} variant="outline" className="rounded-full gap-2 mt-2">
               <Save className="h-4 w-4" /> {savingMeas ? 'Enregistrement...' : 'Enregistrer les mensurations'}
             </Button>
