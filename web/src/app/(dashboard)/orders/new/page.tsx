@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDZD } from '@/lib/helpers';
-import { BookOpen, Image as ImageIcon, X, UserPlus, Search, Ruler } from 'lucide-react';
+import { BookOpen, Image as ImageIcon, X, UserPlus, Search, Ruler, Plus, Trash2 } from 'lucide-react';
 
 const WORK_TYPES = [
   { key: 'Simple', label: 'Simple', desc: 'Couture standard' },
@@ -19,9 +19,14 @@ const WORK_TYPES = [
 export default function NewOrderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Add/remove measurement fields
+  const [newFieldName, setNewFieldName] = useState('');
+  const [addingField, setAddingField] = useState(false);
 
   // Step 1: Client — search or create
   const [mode, setMode] = useState<'search' | 'create'>('search');
@@ -106,6 +111,25 @@ export default function NewOrderPage() {
     const timer = setTimeout(() => searchClients(clientSearch), 300);
     return () => clearTimeout(timer);
   }, [clientSearch, searchClients]);
+
+  const handleAddField = async () => {
+    if (!newFieldName.trim()) return;
+    setAddingField(true);
+    try {
+      await fieldsApi.create({ name: newFieldName.trim(), unit: 'cm', displayOrder: (measurementFieldsList?.length ?? 0) + 1 });
+      queryClient.invalidateQueries({ queryKey: ['measurement-fields'] });
+      setNewFieldName('');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Erreur'); }
+    setAddingField(false);
+  };
+
+  const handleRemoveField = async (fieldId: string, fieldName: string) => {
+    if (!confirm(`Supprimer "${fieldName}" ?`)) return;
+    try {
+      await fieldsApi.remove(fieldId);
+      queryClient.invalidateQueries({ queryKey: ['measurement-fields'] });
+    } catch (e) { alert(e instanceof Error ? e.message : 'Erreur'); }
+  };
 
   const createClientInline = async (confirmDuplicate = false) => {
     if (!firstName.trim() || !lastName.trim() || !phone.trim()) {
@@ -296,26 +320,41 @@ export default function NewOrderPage() {
                     </div>
 
                     {/* Measurements */}
-                    {measurementFieldsList && measurementFieldsList.length > 0 && (
-                      <div className="border-t pt-4">
-                        <p className="flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase text-muted-foreground mb-3">
-                          <Ruler className="h-3 w-3" /> Mensurations
-                        </p>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                          {measurementFieldsList.map((f) => (
-                            <div key={f.id}>
-                              <label className="block text-xs font-medium text-muted-foreground mb-1">{f.name}</label>
-                              <div className="relative">
-                                <Input type="number" value={measurements[f.name] || ''}
-                                  onChange={e => setMeasurements(prev => ({ ...prev, [f.name]: e.target.value }))}
-                                  placeholder="—" className="pr-10 h-9" />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{f.unit}</span>
-                              </div>
+                    <div className="border-t pt-4">
+                      <p className="flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase text-muted-foreground mb-3">
+                        <Ruler className="h-3 w-3" /> Mensurations
+                      </p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        {measurementFieldsList?.map((f) => (
+                          <div key={f.id} className="group">
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-xs font-medium text-muted-foreground">{f.name}</label>
+                              <button onClick={() => handleRemoveField(f.id, f.name)}
+                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/10 text-destructive transition-all"
+                                title="Supprimer ce champ">
+                                <Trash2 className="h-3 w-3" />
+                              </button>
                             </div>
-                          ))}
-                        </div>
+                            <div className="relative">
+                              <Input type="number" value={measurements[f.name] || ''}
+                                onChange={e => setMeasurements(prev => ({ ...prev, [f.name]: e.target.value }))}
+                                placeholder="—" className="pr-10 h-9" />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{f.unit}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+                      {/* Add custom field */}
+                      <div className="flex items-center gap-2 mt-3">
+                        <Input value={newFieldName} onChange={e => setNewFieldName(e.target.value)}
+                          placeholder="Ajouter un champ (ex: Tour de cou)" className="flex-1 h-8 text-xs"
+                          onKeyDown={e => e.key === 'Enter' && handleAddField()} />
+                        <Button onClick={handleAddField} disabled={addingField || !newFieldName.trim()}
+                          size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1">
+                          <Plus className="h-3 w-3" /> {addingField ? '...' : 'Ajouter'}
+                        </Button>
+                      </div>
+                    </div>
 
                     {/* Duplicate warning */}
                     {duplicateWarning && (
