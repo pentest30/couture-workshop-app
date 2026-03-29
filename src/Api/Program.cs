@@ -130,6 +130,16 @@ app.MapUserEndpoints();
     // Seed identity (roles + admin user) in all environments
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
 
+    // Fix any users stuck as inactive (Postgres boolean default issue)
+    var identityDb = services.GetRequiredService<Couture.Identity.Persistence.IdentityDbContext>();
+    var inactiveUsers = await identityDb.Users.Where(u => !u.IsActive).ToListAsync();
+    if (inactiveUsers.Count > 0)
+    {
+        foreach (var u in inactiveUsers) u.IsActive = true;
+        await identityDb.SaveChangesAsync();
+        logger.LogInformation("Activated {Count} inactive users", inactiveUsers.Count);
+    }
+
     // Seed measurement fields in all environments (required for measurements to work)
     var clientsDb = services.GetRequiredService<ClientsDbContext>();
     if (!await clientsDb.MeasurementFields.AnyAsync())

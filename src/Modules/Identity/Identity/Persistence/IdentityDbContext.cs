@@ -21,6 +21,7 @@ public sealed class IdentityDbContext : IdentityDbContext<CoutureUser, CoutureRo
             b.ToTable("users");
             b.Property(u => u.FirstName).HasMaxLength(100).IsRequired();
             b.Property(u => u.LastName).HasMaxLength(100).IsRequired();
+            b.Property(u => u.IsActive).HasDefaultValue(true);
         });
 
         builder.Entity<CoutureRole>(b =>
