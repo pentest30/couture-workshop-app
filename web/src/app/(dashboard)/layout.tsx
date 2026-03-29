@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import {
   LayoutDashboard, FileText, Users, Bell, Wallet, BookOpen,
-  LogOut, Sun, Moon, Monitor, ChevronDown, Shield,
+  LogOut, Sun, Moon, Monitor, ChevronDown, Shield, Settings,
 } from 'lucide-react';
 
 // roles: which roles can see this nav item (empty = all authenticated users)
@@ -23,6 +23,7 @@ const NAV: { href: string; label: string; icon: typeof LayoutDashboard; roles?: 
   { href: '/notifications', label: 'Alertes', icon: Bell },
   { href: '/finance', label: 'Finance', icon: Wallet, roles: ['Manager', 'Cashier'] },
   { href: '/users', label: 'Utilisateurs', icon: Shield, roles: ['Manager'] },
+  { href: '/settings', label: 'Paramètres', icon: Settings, roles: ['Manager'] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

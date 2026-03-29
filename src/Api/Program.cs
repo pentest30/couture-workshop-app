@@ -130,6 +130,46 @@ app.MapUserEndpoints();
     // Seed identity (roles + admin user) in all environments
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
 
+    // Seed measurement fields in all environments (required for measurements to work)
+    var clientsDb = services.GetRequiredService<ClientsDbContext>();
+    if (!await clientsDb.MeasurementFields.AnyAsync())
+    {
+        var fields = new[]
+        {
+            ("Tour de poitrine", "cm", 1),
+            ("Tour de taille", "cm", 2),
+            ("Tour de hanches", "cm", 3),
+            ("Longueur robe (dos)", "cm", 4),
+            ("Longueur jupe", "cm", 5),
+            ("Longueur manche", "cm", 6),
+            ("Tour de bras", "cm", 7),
+            ("Épaule", "cm", 8),
+            ("Carrure dos", "cm", 9),
+            ("Hauteur totale", "cm", 10),
+        };
+        foreach (var (name, unit, order) in fields)
+        {
+            clientsDb.MeasurementFields.Add(
+                Couture.Clients.Domain.MeasurementField.Create(name, unit, order, isDefault: true));
+        }
+        await clientsDb.SaveChangesAsync();
+        logger.LogInformation("Seeded {Count} measurement fields", fields.Length);
+    }
+
+    // Seed notification configs in all environments
+    var notifDb = services.GetRequiredService<NotificationsDbContext>();
+    if (!await notifDb.NotificationConfigs.AnyAsync())
+    {
+        foreach (var type in Couture.Notifications.Domain.NotificationType.List)
+        {
+            notifDb.NotificationConfigs.Add(
+                Couture.Notifications.Domain.NotificationConfig.Create(type));
+        }
+        await notifDb.SaveChangesAsync();
+        logger.LogInformation("Seeded notification configs for {Count} types",
+            Couture.Notifications.Domain.NotificationType.List.Count);
+    }
+
     if (app.Environment.IsDevelopment())
     {
         logger.LogInformation("Seeding sample data...");

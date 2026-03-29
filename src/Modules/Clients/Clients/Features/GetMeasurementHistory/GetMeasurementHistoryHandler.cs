@@ -1,3 +1,4 @@
+using Couture.Clients.Contracts;
 using Couture.Clients.Contracts.Dtos;
 using Couture.Clients.Persistence;
 using Mediator;

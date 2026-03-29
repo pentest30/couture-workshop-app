@@ -1,13 +1,13 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { clients as clientsApi, orders, catalog, type Client, type CatalogModel } from '@/lib/api';
+import { clients as clientsApi, orders, catalog, measurementFields as fieldsApi, type Client, type CatalogModel, type MeasurementField } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { formatDZD } from '@/lib/helpers';
-import { BookOpen, Image as ImageIcon, X } from 'lucide-react';
+import { BookOpen, Image as ImageIcon, X, UserPlus, Search, Ruler } from 'lucide-react';
 
 const WORK_TYPES = [
   { key: 'Simple', label: 'Simple', desc: 'Couture standard' },
@@ -23,10 +23,29 @@ export default function NewOrderPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Step 1: Client
+  // Step 1: Client — search or create
+  const [mode, setMode] = useState<'search' | 'create'>('search');
   const [clientSearch, setClientSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+  // Inline client creation
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [phone2, setPhone2] = useState('');
+  const [address, setAddress] = useState('');
+  const [notes, setNotes] = useState('');
+  const [measurements, setMeasurements] = useState<Record<string, string>>({});
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    existingClientId: string; existingCode: string; existingName: string;
+  } | null>(null);
+
+  // Measurement fields from API
+  const { data: measurementFieldsList } = useQuery({
+    queryKey: ['measurement-fields'],
+    queryFn: () => fieldsApi.list(),
+  });
 
   // Catalog model (optional)
   const [selectedModel, setSelectedModel] = useState<CatalogModel | null>(null);
@@ -46,20 +65,18 @@ export default function NewOrderPage() {
   const [totalPrice, setTotalPrice] = useState('');
   const [deposit, setDeposit] = useState('');
 
-  // Pre-fill from URL params (when coming from catalog detail "Créer commande")
+  // Pre-fill from URL params
   useEffect(() => {
+    const clientId = searchParams.get('clientId');
+    if (clientId) {
+      clientsApi.get(clientId).then(c => setSelectedClient(c)).catch(() => {});
+    }
     const wt = searchParams.get('workType');
     const desc = searchParams.get('description');
     const price = searchParams.get('price');
-    const modelId = searchParams.get('modelId');
     if (wt) setWorkType(wt);
     if (desc) setDescription(desc);
     if (price) setTotalPrice(price);
-    if (modelId) {
-      catalog.listModels({ pageSize: 1, search: '' }).then(data => {
-        // We'll just store the ID, the form is already pre-filled
-      }).catch(() => {});
-    }
   }, [searchParams]);
 
   const applyModel = (model: CatalogModel) => {
@@ -89,6 +106,46 @@ export default function NewOrderPage() {
     const timer = setTimeout(() => searchClients(clientSearch), 300);
     return () => clearTimeout(timer);
   }, [clientSearch, searchClients]);
+
+  const createClientInline = async (confirmDuplicate = false) => {
+    if (!firstName.trim() || !lastName.trim() || !phone.trim()) {
+      setError('Prénom, nom et téléphone sont obligatoires');
+      return;
+    }
+    setSaving(true); setError('');
+    if (!confirmDuplicate) setDuplicateWarning(null);
+    try {
+      const result = await clientsApi.create({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        primaryPhone: phone.trim(),
+        secondaryPhone: phone2.trim() || undefined,
+        address: address.trim() || undefined,
+        notes: notes.trim() || undefined,
+        confirmDuplicate,
+      });
+
+      // Save measurements if any
+      const filledMeasurements = Object.entries(measurements)
+        .filter(([, v]) => v && parseFloat(v) > 0)
+        .map(([fieldName, value]) => ({ fieldName, value: parseFloat(value), unit: 'cm' }));
+      if (filledMeasurements.length > 0) {
+        try { await clientsApi.saveMeasurements(result.id, filledMeasurements); } catch {}
+      }
+
+      setSelectedClient({ ...result, firstName: firstName.trim(), lastName: lastName.trim(), primaryPhone: phone.trim() } as Client);
+      setMode('search');
+      setStep(2); // auto-advance to step 2
+    } catch (e: unknown) {
+      const err = e as { duplicate?: boolean; existingClientId?: string; existingCode?: string; existingName?: string; message?: string };
+      if (err.duplicate && err.existingClientId) {
+        setDuplicateWarning({ existingClientId: err.existingClientId, existingCode: err.existingCode!, existingName: err.existingName! });
+      } else {
+        setError(err.message || 'Erreur lors de la création');
+      }
+    }
+    setSaving(false);
+  };
 
   const handleSubmit = async () => {
     setSaving(true); setError('');
@@ -134,33 +191,154 @@ export default function NewOrderPage() {
       </div>
 
       <div className="bg-card rounded-2xl p-6 border border-border/20">
-        {/* Step 1: Client */}
+        {/* Step 1: Client — search or create */}
         {step === 1 && (
           <div className="space-y-4">
-            <h3 className="font-heading text-lg font-semibold">Sélectionner un client</h3>
             {selectedClient ? (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/15">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
-                  {selectedClient.firstName[0]}{selectedClient.lastName[0]}
+              <>
+                <h3 className="font-heading text-lg font-semibold">Client sélectionné</h3>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/15">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
+                    {selectedClient.firstName[0]}{selectedClient.lastName[0]}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold">{selectedClient.firstName} {selectedClient.lastName}</p>
+                    <p className="text-xs text-muted-foreground">{selectedClient.code} — {selectedClient.primaryPhone}</p>
+                  </div>
+                  <button onClick={() => { setSelectedClient(null); setMode('search'); }}
+                    className="text-xs text-destructive font-semibold">Changer</button>
                 </div>
-                <div className="flex-1">
-                  <p className="font-semibold">{selectedClient.firstName} {selectedClient.lastName}</p>
-                  <p className="text-xs text-muted-foreground">{selectedClient.code} — {selectedClient.primaryPhone}</p>
-                </div>
-                <button onClick={() => setSelectedClient(null)} className="text-xs text-destructive font-semibold">Changer</button>
-              </div>
+              </>
             ) : (
               <>
-                <Input value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Rechercher par nom ou téléphone..." />
-                {searchResults.length > 0 && (
-                  <div className="space-y-1 max-h-60 overflow-y-auto">
-                    {searchResults.map(c => (
-                      <button key={c.id} onClick={() => { setSelectedClient(c); setSearchResults([]); setClientSearch(''); }}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors text-left">
-                        <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center text-primary text-xs font-bold">{c.firstName[0]}{c.lastName[0]}</div>
-                        <div><p className="text-sm font-medium">{c.firstName} {c.lastName}</p><p className="text-xs text-muted-foreground">{c.code}</p></div>
-                      </button>
-                    ))}
+                {/* Mode toggle */}
+                <div className="flex gap-2">
+                  <button onClick={() => setMode('search')}
+                    className={`flex-1 flex items-center justify-center gap-2 h-11 rounded-xl border text-sm font-semibold transition-all
+                      ${mode === 'search' ? 'border-primary bg-primary/5 text-primary' : 'border-border/30 hover:bg-secondary text-muted-foreground'}`}>
+                    <Search className="h-4 w-4" /> Client existant
+                  </button>
+                  <button onClick={() => setMode('create')}
+                    className={`flex-1 flex items-center justify-center gap-2 h-11 rounded-xl border text-sm font-semibold transition-all
+                      ${mode === 'create' ? 'border-primary bg-primary/5 text-primary' : 'border-border/30 hover:bg-secondary text-muted-foreground'}`}>
+                    <UserPlus className="h-4 w-4" /> Nouveau client
+                  </button>
+                </div>
+
+                {mode === 'search' && (
+                  <div className="space-y-2">
+                    <Input value={clientSearch} onChange={e => setClientSearch(e.target.value)}
+                      placeholder="Rechercher par nom ou téléphone..." />
+                    {searchResults.length > 0 && (
+                      <div className="space-y-1 max-h-60 overflow-y-auto">
+                        {searchResults.map(c => (
+                          <button key={c.id} onClick={() => { setSelectedClient(c); setSearchResults([]); setClientSearch(''); }}
+                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors text-left">
+                            <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center text-primary text-xs font-bold">
+                              {c.firstName[0]}{c.lastName[0]}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{c.firstName} {c.lastName}</p>
+                              <p className="text-xs text-muted-foreground">{c.code}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {clientSearch.length >= 2 && searchResults.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-3">
+                        Aucun résultat.{' '}
+                        <button onClick={() => setMode('create')} className="text-primary font-semibold hover:underline">
+                          Créer un nouveau client
+                        </button>
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {mode === 'create' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1">
+                          Prénom <span className="text-destructive">*</span>
+                        </label>
+                        <Input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Sara" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1">
+                          Nom <span className="text-destructive">*</span>
+                        </label>
+                        <Input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Benali" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1">
+                          Téléphone <span className="text-destructive">*</span>
+                        </label>
+                        <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="0550123456" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1">Tél. secondaire</label>
+                        <Input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder="Optionnel" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1">Adresse</label>
+                      <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Optionnel" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1">Notes</label>
+                      <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Préférences..."
+                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none
+                          ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                    </div>
+
+                    {/* Measurements */}
+                    {measurementFieldsList && measurementFieldsList.length > 0 && (
+                      <div className="border-t pt-4">
+                        <p className="flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase text-muted-foreground mb-3">
+                          <Ruler className="h-3 w-3" /> Mensurations
+                        </p>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                          {measurementFieldsList.map((f) => (
+                            <div key={f.id}>
+                              <label className="block text-xs font-medium text-muted-foreground mb-1">{f.name}</label>
+                              <div className="relative">
+                                <Input type="number" value={measurements[f.name] || ''}
+                                  onChange={e => setMeasurements(prev => ({ ...prev, [f.name]: e.target.value }))}
+                                  placeholder="—" className="pr-10 h-9" />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{f.unit}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Duplicate warning */}
+                    {duplicateWarning && (
+                      <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 p-3 space-y-2">
+                        <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                          Client existant avec ce téléphone : {duplicateWarning.existingName} ({duplicateWarning.existingCode})
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" className="rounded-full" onClick={() => {
+                            clientsApi.get(duplicateWarning.existingClientId).then(c => { setSelectedClient(c); setMode('search'); setDuplicateWarning(null); }).catch(() => {});
+                          }}>
+                            Utiliser ce client
+                          </Button>
+                          <Button size="sm" className="rounded-full" onClick={() => createClientInline(true)} disabled={saving}>
+                            {saving ? 'Création...' : 'Créer quand même'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button onClick={() => createClientInline(false)} disabled={saving} className="w-full rounded-full">
+                      {saving ? 'Création...' : 'Créer le client et continuer'}
+                    </Button>
                   </div>
                 )}
               </>

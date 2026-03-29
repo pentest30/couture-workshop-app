@@ -25,7 +25,7 @@ public class OrderLifecycleTests
         // Step 2: Create order
         var orderHandler = new CreateOrderHandler(dbs.Orders);
         var order = await orderHandler.Handle(
-            new CreateOrderCommand(client.ClientId, "Simple",
+            new CreateOrderCommand(client.Id, "Simple",
                 DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), 15000m,
                 5000m, "Especes", "Robe simple", "Satin", null,
                 null, null, null, null, null, null, null, null, null, null),
@@ -85,7 +85,7 @@ public class OrderLifecycleTests
 
         var orderHandler = new CreateOrderHandler(dbs.Orders);
         var order = await orderHandler.Handle(
-            new CreateOrderCommand(client.ClientId, "Brode",
+            new CreateOrderCommand(client.Id, "Brode",
                 DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)), 25000m,
                 null, null, "Caftan brod\u00e9", "Velours", null,
                 null, null, null, null, null, null, null, null, null, null),
@@ -133,7 +133,7 @@ public class OrderLifecycleTests
 
         var orderHandler = new CreateOrderHandler(dbs.Orders);
         var order = await orderHandler.Handle(
-            new CreateOrderCommand(client.ClientId, "Mixte",
+            new CreateOrderCommand(client.Id, "Mixte",
                 DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), 45000m,
                 null, null, "Karakou", "Velours", null,
                 null, null, null, null, null, null, null, null, null, null),
@@ -171,7 +171,7 @@ public class OrderLifecycleTests
 
         var orderHandler = new CreateOrderHandler(dbs.Orders);
         var order = await orderHandler.Handle(
-            new CreateOrderCommand(client.ClientId, "Simple",
+            new CreateOrderCommand(client.Id, "Simple",
                 DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), 12000m,
                 null, null, null, null, null, null, null, null, null, null, null, null, null, null, null),
             CancellationToken.None);
@@ -206,7 +206,7 @@ public class OrderLifecycleTests
 
         var orderHandler = new CreateOrderHandler(dbs.Orders);
         var order = await orderHandler.Handle(
-            new CreateOrderCommand(client.ClientId, "Simple",
+            new CreateOrderCommand(client.Id, "Simple",
                 DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), 20000m,
                 null, null, null, null, null, null, null, null, null, null, null, null, null, null, null),
             CancellationToken.None);

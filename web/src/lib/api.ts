@@ -101,6 +101,14 @@ export const clients = {
   deactivate: (id: string) => request(`/clients/${id}`, { method: 'DELETE' }),
 };
 
+// Measurement Fields
+export const measurementFields = {
+  list: () => request<MeasurementField[]>('/measurement-fields'),
+  create: (data: { name: string; unit: string; displayOrder: number }) =>
+    request<{ id: string }>('/measurement-fields', { method: 'POST', body: JSON.stringify(data) }),
+  remove: (id: string) => request(`/measurement-fields/${id}`, { method: 'DELETE' }),
+};
+
 // Catalog
 export const catalog = {
   listModels: (params: Record<string, string | number | boolean | undefined>) => {
@@ -234,6 +242,7 @@ export interface Client {
 }
 
 export interface Measurement { fieldName: string; value: number; unit: string; }
+export interface MeasurementField { id: string; name: string; unit: string; displayOrder: number; isDefault: boolean; }
 
 export interface Payment {
   id: string; orderId: string; amount: number;

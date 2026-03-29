@@ -276,10 +276,11 @@ function StatusModal({ orderId, order, onClose, onDone }: { orderId: string; ord
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch artisan lists (only active users)
-  const { data: tailors } = useQuery({ queryKey: ['users-tailor'], queryFn: () => users.list({ role: 'Tailor', activeOnly: true }) });
-  const { data: embroiderers } = useQuery({ queryKey: ['users-embroiderer'], queryFn: () => users.list({ role: 'Embroiderer', activeOnly: true }) });
-  const { data: beaders } = useQuery({ queryKey: ['users-beader'], queryFn: () => users.list({ role: 'Beader', activeOnly: true }) });
+  // Fetch all active users once, filter by role client-side
+  const { data: allUsers } = useQuery({ queryKey: ['users-active'], queryFn: () => users.list({ activeOnly: true }) });
+  const tailors = { items: allUsers?.items?.filter(u => u.roles.includes('Tailor')) ?? [] };
+  const embroiderers = { items: allUsers?.items?.filter(u => u.roles.includes('Embroiderer')) ?? [] };
+  const beaders = { items: allUsers?.items?.filter(u => u.roles.includes('Beader')) ?? [] };
 
   const transitions: Record<string, string[]> = {
     Recue: ['EnAttente', 'EnCours'],
@@ -378,7 +379,9 @@ function ArtisanPicker({ label, hint, users: artisans, value, onChange }: {
           <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
         ))}
       </select>
-      <p className="text-[11px] text-muted-foreground mt-1">{hint}</p>
+      <p className="text-[11px] text-muted-foreground mt-1">
+        {artisans === undefined ? 'Chargement...' : artisans.length === 0 ? 'Aucun artisan avec ce rôle' : hint}
+      </p>
     </div>
   );
 }

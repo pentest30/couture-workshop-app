@@ -1,4 +1,6 @@
 using Couture.Clients.Features.CreateClient;
+using Couture.Clients.Persistence;
+using Microsoft.EntityFrameworkCore;
 using DuplicatePhoneException = Couture.Clients.Features.CreateClient.DuplicatePhoneException;
 using Couture.Clients.Features.GetClient;
 using Couture.Clients.Features.GetMeasurementHistory;
@@ -32,10 +34,10 @@ public static class ClientEndpoints
             catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
         }).RequireAuthorization(CouturePermissions.ClientsUpdate);
 
-        var fields = app.MapGroup("/api/measurement-fields").WithTags("Measurement Fields")
-            .RequireAuthorization(CouturePermissions.SettingsManage);
-        fields.MapPost("/", CreateMeasurementField);
-        fields.MapDelete("/{fieldId:guid}", DeleteMeasurementField);
+        var fields = app.MapGroup("/api/measurement-fields").WithTags("Measurement Fields").RequireAuthorization();
+        fields.MapGet("/", ListMeasurementFields);
+        fields.MapPost("/", CreateMeasurementField).RequireAuthorization(CouturePermissions.SettingsManage);
+        fields.MapDelete("/{fieldId:guid}", DeleteMeasurementField).RequireAuthorization(CouturePermissions.SettingsManage);
     }
 
     private static async Task<IResult> CreateClient([FromBody] CreateClientCommand command, IMediator mediator)
@@ -74,10 +76,37 @@ public static class ClientEndpoints
     }
     private static async Task<IResult> GetMeasurementHistory(Guid id, IMediator mediator)
         => Results.Ok(await mediator.Send(new GetMeasurementHistoryQuery(id)));
-    private static async Task<IResult> RecordMeasurements(Guid id, [FromBody] RecordMeasurementsRequest req, IMediator mediator, ICurrentUser user)
+    private static async Task<IResult> RecordMeasurements(Guid id, [FromBody] RecordMeasurementsRequest req, IMediator mediator, ICurrentUser user, ClientsDbContext clientsDb)
     {
-        await mediator.Send(new RecordMeasurementsCommand(id, req.Measurements.Select(m => new MeasurementEntry(m.FieldId, m.Value)).ToList(), user.UserId));
+        // Resolve field names to IDs (frontend sends fieldName, not fieldId)
+        var fieldMap = await clientsDb.MeasurementFields.AsNoTracking()
+            .ToDictionaryAsync(f => f.Name, f => f.Id.Value);
+
+        var entries = new List<MeasurementEntry>();
+        foreach (var m in req.Measurements)
+        {
+            if (m.FieldId != Guid.Empty)
+            {
+                entries.Add(new MeasurementEntry(m.FieldId, m.Value));
+            }
+            else if (!string.IsNullOrEmpty(m.FieldName) && fieldMap.TryGetValue(m.FieldName, out var resolvedId))
+            {
+                entries.Add(new MeasurementEntry(resolvedId, m.Value));
+            }
+        }
+
+        if (entries.Count > 0)
+            await mediator.Send(new RecordMeasurementsCommand(id, entries, user.UserId));
         return Results.NoContent();
+    }
+    private static async Task<IResult> ListMeasurementFields(ClientsDbContext clientsDb)
+    {
+        var fields = await clientsDb.MeasurementFields.AsNoTracking()
+            .Where(f => f.IsActive)
+            .OrderBy(f => f.DisplayOrder)
+            .Select(f => new { id = f.Id.Value, f.Name, f.Unit, f.DisplayOrder, f.IsDefault })
+            .ToListAsync();
+        return Results.Ok(fields);
     }
     private static async Task<IResult> CreateMeasurementField([FromBody] CreateFieldRequest req, IMediator mediator)
     { var id = await mediator.Send(new CreateMeasurementFieldCommand(req.Name, req.Unit, req.DisplayOrder)); return Results.Created($"/api/measurement-fields/{id}", new { id }); }
@@ -87,5 +116,5 @@ public static class ClientEndpoints
 
 public record UpdateClientRequest(string? FirstName, string? LastName, string? PrimaryPhone, string? SecondaryPhone, string? Address, DateOnly? DateOfBirth, string? Notes);
 public record RecordMeasurementsRequest(List<MeasurementEntryDto> Measurements);
-public record MeasurementEntryDto(Guid FieldId, decimal Value);
+public record MeasurementEntryDto(Guid FieldId, string? FieldName, decimal Value);
 public record CreateFieldRequest(string Name, string Unit, int DisplayOrder);
