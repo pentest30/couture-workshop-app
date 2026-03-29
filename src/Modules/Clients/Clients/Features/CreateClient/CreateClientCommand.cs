@@ -12,4 +12,4 @@ public sealed record CreateClientCommand(
     string? Notes,
     bool ConfirmDuplicate = false) : ICommand<CreateClientResult>;
 
-public sealed record CreateClientResult(Guid ClientId, string Code);
+public sealed record CreateClientResult(Guid Id, string Code);
