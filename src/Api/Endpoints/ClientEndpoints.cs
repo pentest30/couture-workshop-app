@@ -43,7 +43,7 @@ public static class ClientEndpoints
         try
         {
             var result = await mediator.Send(command);
-            return Results.Created($"/api/clients/{result.ClientId}", result);
+            return Results.Created($"/api/clients/{result.Id}", result);
         }
         catch (DuplicatePhoneException ex)
         {
