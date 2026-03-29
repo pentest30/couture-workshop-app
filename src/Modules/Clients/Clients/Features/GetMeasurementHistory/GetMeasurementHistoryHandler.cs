@@ -9,10 +9,20 @@ public sealed class GetMeasurementHistoryHandler : IQueryHandler<GetMeasurementH
     public GetMeasurementHistoryHandler(ClientsDbContext db) => _db = db;
     public async ValueTask<MeasurementHistoryResult> Handle(GetMeasurementHistoryQuery query, CancellationToken ct)
     {
-        var allMeasurements = await _db.ClientMeasurements.AsNoTracking()
-            .Where(m => m.ClientId.Value == query.ClientId)
-            .Join(_db.MeasurementFields, m => m.MeasurementFieldId, f => f.Id, (m, f) => new { m, f })
-            .OrderByDescending(x => x.m.MeasuredAt).ToListAsync(ct);
+        var clientId = ClientId.From(query.ClientId);
+
+        var measurements = await _db.ClientMeasurements.AsNoTracking()
+            .Where(m => m.ClientId == clientId)
+            .OrderByDescending(m => m.MeasuredAt)
+            .ToListAsync(ct);
+
+        var fields = await _db.MeasurementFields.AsNoTracking().ToListAsync(ct);
+        var fieldMap = fields.ToDictionary(f => f.Id);
+
+        var allMeasurements = measurements
+            .Where(m => fieldMap.ContainsKey(m.MeasurementFieldId))
+            .Select(m => new { m, f = fieldMap[m.MeasurementFieldId] })
+            .ToList();
 
         var current = allMeasurements.GroupBy(x => x.m.MeasurementFieldId)
             .Select(g => g.First())
