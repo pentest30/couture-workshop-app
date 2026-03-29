@@ -21,9 +21,18 @@ public sealed class CreateClientHandler : ICommandHandler<CreateClientCommand, C
         if (existingClient is not null && !command.ConfirmDuplicate)
             throw new DuplicatePhoneException(existingClient.Id.Value, existingClient.Code, existingClient.FullName, command.PrimaryPhone.Trim());
 
-        // Generate sequential code
-        var count = await _db.Clients.CountAsync(ct) + 1;
-        var code = $"C-{count:D4}";
+        // Generate sequential code (include soft-deleted clients to avoid duplicate codes)
+        var lastCode = await _db.Clients
+            .IgnoreQueryFilters()
+            .OrderByDescending(c => c.Code)
+            .Select(c => c.Code)
+            .FirstOrDefaultAsync(ct);
+
+        var nextNumber = 1;
+        if (lastCode is not null && lastCode.StartsWith("C-") && int.TryParse(lastCode[2..], out var parsed))
+            nextNumber = parsed + 1;
+
+        var code = $"C-{nextNumber:D4}";
 
         var client = Client.Create(
             code, command.FirstName, command.LastName, command.PrimaryPhone,
