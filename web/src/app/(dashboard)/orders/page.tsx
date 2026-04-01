@@ -61,14 +61,10 @@ function OrderActions({ order }: { order: OrderSummary }) {
         <DropdownMenuItem onClick={() => window.open(`/api/orders/${order.id}/worksheet`, '_blank')}>
           <Download className="mr-2 h-4 w-4" /> Fiche de travail (PDF)
         </DropdownMenuItem>
-        {order.status === 'Recue' && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-              <Trash2 className="mr-2 h-4 w-4" /> Supprimer
-            </DropdownMenuItem>
-          </>
-        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+          <Trash2 className="mr-2 h-4 w-4" /> Annuler la commande
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
@@ -55,6 +56,44 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     }
   }
 
+  Future<void> _cancelOrder() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Annuler la commande', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: Text('Cette commande sera annulee. Continuer ?', style: GoogleFonts.manrope(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Non', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text('Annuler la commande', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref.read(apiClientProvider).cancelOrder(widget.orderId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Commande annulee'), backgroundColor: AppColors.statusPrete),
+        );
+        context.go('/orders');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
   double get _outstandingBalance {
     if (_order == null) return 0;
     final total = (_order!['totalPrice'] as num?)?.toDouble() ?? 0;
@@ -86,7 +125,17 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Commande'), leading: const BackButton()),
+      appBar: AppBar(
+        title: const Text('Commande'),
+        leading: const BackButton(),
+        actions: [
+          IconButton(
+            onPressed: _cancelOrder,
+            icon: const Icon(Icons.delete_outline, color: AppColors.error),
+            tooltip: 'Annuler la commande',
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: ListView(

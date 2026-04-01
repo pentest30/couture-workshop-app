@@ -35,9 +35,6 @@ class OrderValidation {
     if (firstName.trim().isEmpty) return 'Le prénom est obligatoire';
     if (lastName.trim().isEmpty) return 'Le nom est obligatoire';
     if (phone.trim().isEmpty) return 'Le téléphone est obligatoire';
-    if (!RegExp(r'^0[567]\d{8}$').hasMatch(phone.trim())) {
-      return 'Format téléphone invalide (ex: 0550123456)';
-    }
     return null;
   }
 

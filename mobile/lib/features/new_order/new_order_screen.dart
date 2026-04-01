@@ -195,10 +195,6 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
       setState(() => _createError = 'Telephone est obligatoire');
       return;
     }
-    if (!RegExp(r'^0[567]\d{8}$').hasMatch(_newPhoneCtrl.text.trim())) {
-      setState(() => _createError = 'Format telephone invalide (ex: 0550123456)');
-      return;
-    }
 
     setState(() { _creatingClient = true; _createError = null; });
     try {
@@ -549,13 +545,13 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
       TextField(
         controller: _newPhoneCtrl,
         keyboardType: TextInputType.phone,
-        decoration: InputDecoration(labelText: 'Telephone *', hintText: '0550123456', prefixIcon: const Icon(Icons.phone_outlined, size: 20), labelStyle: GoogleFonts.manrope(fontSize: 13)),
+        decoration: InputDecoration(labelText: 'Telephone *', hintText: '0550123456 ou +213550123456', prefixIcon: const Icon(Icons.phone_outlined, size: 20), labelStyle: GoogleFonts.manrope(fontSize: 13)),
       ),
       const SizedBox(height: 12),
       TextField(
         controller: _newPhone2Ctrl,
         keyboardType: TextInputType.phone,
-        decoration: InputDecoration(labelText: 'Tel. secondaire', prefixIcon: const Icon(Icons.phone_outlined, size: 20), labelStyle: GoogleFonts.manrope(fontSize: 13)),
+        decoration: InputDecoration(labelText: 'Tel. secondaire', hintText: '0550123456 ou +213...', prefixIcon: const Icon(Icons.phone_outlined, size: 20), labelStyle: GoogleFonts.manrope(fontSize: 13)),
       ),
       const SizedBox(height: 12),
       TextField(

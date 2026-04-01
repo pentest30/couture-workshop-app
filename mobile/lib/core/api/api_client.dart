@@ -111,6 +111,11 @@ class ApiClient {
     return _handleResponse(response) as Map<String, dynamic>;
   }
 
+  Future<void> cancelOrder(String orderId) async {
+    final response = await dio.delete('/api/orders/$orderId');
+    _handleResponse(response);
+  }
+
   // Catalog
   Future<Map<String, dynamic>> getCatalogModels({String? search, String? category, int page = 1}) async {
     final params = <String, dynamic>{'page': page, 'pageSize': 20};

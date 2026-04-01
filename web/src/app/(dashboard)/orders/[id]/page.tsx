@@ -1,6 +1,7 @@
 'use client';
 import { use, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { orders, finance, users, type Payment, type User, ROLE_LABELS } from '@/lib/api';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { WorkTypeBadge } from '@/components/ui/work-type-badge';
@@ -9,12 +10,21 @@ import Link from 'next/link';
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: order, isLoading } = useQuery({ queryKey: ['order', id], queryFn: () => orders.get(id) });
   const { data: payments } = useQuery({ queryKey: ['payments', id], queryFn: () => finance.getPayments(id) });
 
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  const handleCancel = async () => {
+    if (!confirm('Annuler cette commande ?')) return;
+    try {
+      await orders.deactivate(id);
+      router.push('/orders');
+    } catch (e) { alert(e instanceof Error ? e.message : 'Erreur'); }
+  };
 
   if (isLoading) return <div className="py-20 text-center"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" /></div>;
   if (!order) return <div className="py-20 text-center text-muted-foreground">Commande introuvable</div>;
@@ -48,6 +58,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             className="h-9 px-4 rounded-full border border-border text-sm font-semibold hover:bg-secondary transition-colors inline-flex items-center gap-1.5">
             Fiche artisan
           </a>
+          <button onClick={handleCancel}
+            className="h-9 px-4 rounded-full border border-destructive/30 text-destructive text-sm font-semibold hover:bg-destructive/10 transition-colors">
+            Annuler
+          </button>
         </div>
       </div>
 

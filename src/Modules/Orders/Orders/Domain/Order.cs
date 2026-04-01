@@ -181,8 +181,6 @@ public sealed class Order : AggregateRoot
 
     public void Deactivate()
     {
-        if (Status != OrderStatus.Recue)
-            throw new InvalidOperationException("Seules les commandes en statut 'Reçue' peuvent être supprimées.");
         IsActive = false;
     }
 

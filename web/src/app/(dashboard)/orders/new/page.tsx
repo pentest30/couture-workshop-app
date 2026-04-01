@@ -301,11 +301,11 @@ export default function NewOrderPage() {
                         <label className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1">
                           Téléphone <span className="text-destructive">*</span>
                         </label>
-                        <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="0550123456" />
+                        <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="0550123456 ou +213550123456" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1">Tél. secondaire</label>
-                        <Input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder="Optionnel" />
+                        <Input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder="0550123456 ou +213..." />
                       </div>
                     </div>
                     <div>

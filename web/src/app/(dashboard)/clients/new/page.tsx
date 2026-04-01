@@ -145,14 +145,14 @@ export default function NewClientPage() {
               <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1.5">
                 <Phone className="h-3 w-3" /> Téléphone principal <span className="text-destructive">*</span>
               </label>
-              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="0550123456" />
+              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="0550123456 ou +213550123456" />
             </div>
 
             <div>
               <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1.5">
                 <Phone className="h-3 w-3" /> Téléphone secondaire
               </label>
-              <Input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder="Optionnel" />
+              <Input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder="0550123456 ou +213550123456" />
             </div>
 
             <div>

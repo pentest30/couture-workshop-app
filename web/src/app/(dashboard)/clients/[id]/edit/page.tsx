@@ -148,11 +148,11 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             </div>
             <div>
               <Label className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> Téléphone principal <span className="text-destructive">*</span></Label>
-              <Input value={phone} onChange={e => setPhone(e.target.value)} className="mt-1" />
+              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="0550123456 ou +213550123456" className="mt-1" />
             </div>
             <div>
               <Label className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> Téléphone secondaire</Label>
-              <Input value={phone2} onChange={e => setPhone2(e.target.value)} className="mt-1" />
+              <Input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder="0550123456 ou +213550123456" className="mt-1" />
             </div>
             <div>
               <Label className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Adresse</Label>

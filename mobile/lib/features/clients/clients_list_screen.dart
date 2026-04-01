@@ -75,7 +75,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
             const SizedBox(height: 12),
             TextField(controller: lastNameCtrl, decoration: InputDecoration(labelText: 'Nom', labelStyle: GoogleFonts.manrope(fontSize: 13))),
             const SizedBox(height: 12),
-            TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: 'Telephone (ex: 0550123456)', labelStyle: GoogleFonts.manrope(fontSize: 13))),
+            TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: 'Telephone (ex: 0550123456 ou +213...)', labelStyle: GoogleFonts.manrope(fontSize: 13))),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity, height: 50,
