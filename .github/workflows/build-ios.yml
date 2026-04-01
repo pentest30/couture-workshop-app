@@ -42,7 +42,6 @@ jobs:
 
       - name: Build with xcodebuild
         run: |
-          ARCHIVE_PATH="$PWD/build/ios/archive/Runner.xcarchive"
           cd ios
           xcodebuild \
             -workspace Runner.xcworkspace \
@@ -50,7 +49,7 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
-            -archivePath "$ARCHIVE_PATH" \
+            -archivePath "$PWD/build/Runner" \
             archive \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -61,8 +60,9 @@ jobs:
 
       - name: Create unsigned IPA
         run: |
-          ARCHIVE_PATH="$PWD/build/ios/archive/Runner.xcarchive"
-          APP_PATH=$(find "$ARCHIVE_PATH" -name "Runner.app" -type d | head -1)
+          echo "Searching for archive..."
+          find . -name "*.xcarchive" -maxdepth 5 2>/dev/null
+          APP_PATH=$(find . -path "*/Runner.xcarchive/Products/Applications/Runner.app" -type d | head -1)
           echo "Found app at: $APP_PATH"
           mkdir -p build/ios/ipa Payload
           cp -r "$APP_PATH" Payload/
