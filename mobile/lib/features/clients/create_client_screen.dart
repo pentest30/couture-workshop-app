@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/providers.dart';
+import '../../core/widgets/measurement_fields_widget.dart';
 
 class CreateClientScreen extends ConsumerStatefulWidget {
   const CreateClientScreen({super.key});
@@ -21,28 +22,9 @@ class _CreateClientScreenState extends ConsumerState<CreateClientScreen> {
   bool _saving = false;
   String? _error;
 
-  // Measurement controllers
+  // Measurement widget
+  final _measurementFieldsKey = GlobalKey<MeasurementFieldsWidgetState>();
   final _measurementCtrls = <String, TextEditingController>{};
-  static const _defaultMeasurements = [
-    'Tour de poitrine',
-    'Tour de taille',
-    'Tour de hanches',
-    'Longueur robe (dos)',
-    'Longueur jupe',
-    'Longueur manche',
-    'Tour de bras',
-    'Épaule',
-    'Carrure dos',
-    'Hauteur totale',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    for (final m in _defaultMeasurements) {
-      _measurementCtrls[m] = TextEditingController();
-    }
-  }
 
   @override
   void dispose() {
@@ -88,35 +70,11 @@ class _CreateClientScreenState extends ConsumerState<CreateClientScreen> {
       if (_notesCtrl.text.trim().isNotEmpty) clientData['notes'] = _notesCtrl.text.trim();
 
       final result = await api.createClient(clientData);
-      final clientId = result['clientId']?.toString();
+      final clientId = result['id']?.toString();
 
       // 2. Record measurements if any filled
       if (clientId != null) {
-        final measurements = <Map<String, dynamic>>[];
-        // Try to get field IDs from the API
-        List<dynamic> fields = [];
-        try {
-          fields = await api.getMeasurementFields();
-        } catch (_) {}
-
-        for (int i = 0; i < _defaultMeasurements.length; i++) {
-          final name = _defaultMeasurements[i];
-          final value = double.tryParse(_measurementCtrls[name]?.text ?? '');
-          if (value != null && value > 0) {
-            // Try to find field ID by name
-            String? fieldId;
-            for (final f in fields) {
-              if (f['name'] == name || f['fieldName'] == name) {
-                fieldId = f['id']?.toString() ?? f['fieldId']?.toString();
-                break;
-              }
-            }
-            if (fieldId != null) {
-              measurements.add({'fieldId': fieldId, 'value': value});
-            }
-          }
-        }
-
+        final measurements = _measurementFieldsKey.currentState?.getFilledMeasurements() ?? [];
         if (measurements.isNotEmpty) {
           try {
             await api.recordMeasurements(clientId, measurements);
@@ -182,34 +140,13 @@ class _CreateClientScreenState extends ConsumerState<CreateClientScreen> {
           Text('Optionnel — vous pouvez les ajouter plus tard', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
           const SizedBox(height: 12),
 
-          // Measurement fields grid
-          ...List.generate(_defaultMeasurements.length, (i) {
-            final name = _defaultMeasurements[i];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(children: [
-                Expanded(
-                  flex: 3,
-                  child: Text(name, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w500)),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: _measurementCtrls[name],
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      suffixText: 'cm',
-                      suffixStyle: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    ),
-                  ),
-                ),
-              ]),
-            );
-          }),
+          // Measurement fields (dynamic, from API)
+          MeasurementFieldsWidget(
+            key: _measurementFieldsKey,
+            api: ref.read(apiClientProvider),
+            controllers: _measurementCtrls,
+            showAddRemove: true,
+          ),
 
           // Error
           if (_error != null) ...[

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/providers.dart';
+import '../../core/widgets/measurement_fields_widget.dart';
 
 class MeasurementsScreen extends ConsumerStatefulWidget {
   final String clientId;
@@ -21,29 +22,15 @@ class MeasurementsScreen extends ConsumerStatefulWidget {
 }
 
 class _MeasurementsScreenState extends ConsumerState<MeasurementsScreen> {
+  final _measurementFieldsKey = GlobalKey<MeasurementFieldsWidgetState>();
   final Map<String, TextEditingController> _controllers = {};
   bool _saving = false;
-  bool _loading = true;
-  List<dynamic> _fields = [];
-
-  // Default fields if API doesn't return them
-  static const _defaultFields = [
-    {'name': 'Tour de poitrine', 'unit': 'cm', 'id': 'poitrine'},
-    {'name': 'Tour de taille', 'unit': 'cm', 'id': 'taille'},
-    {'name': 'Tour de hanches', 'unit': 'cm', 'id': 'hanches'},
-    {'name': 'Longueur robe (dos)', 'unit': 'cm', 'id': 'longueur_robe'},
-    {'name': 'Longueur jupe', 'unit': 'cm', 'id': 'longueur_jupe'},
-    {'name': 'Longueur manche', 'unit': 'cm', 'id': 'longueur_manche'},
-    {'name': 'Tour de bras', 'unit': 'cm', 'id': 'tour_bras'},
-    {'name': 'Epaule', 'unit': 'cm', 'id': 'epaule'},
-    {'name': 'Carrure dos', 'unit': 'cm', 'id': 'carrure_dos'},
-    {'name': 'Hauteur totale', 'unit': 'cm', 'id': 'hauteur'},
-  ];
+  bool _loadingHistory = true;
 
   @override
   void initState() {
     super.initState();
-    _loadFields();
+    _loadHistory();
   }
 
   @override
@@ -54,55 +41,40 @@ class _MeasurementsScreenState extends ConsumerState<MeasurementsScreen> {
     super.dispose();
   }
 
-  Future<void> _loadFields() async {
+  Future<void> _loadHistory() async {
     try {
       final history = await ref.read(apiClientProvider).getMeasurementHistory(widget.clientId);
       final current = (history['current'] as List?) ?? [];
 
-      // Use current measurements as fields, or defaults
-      if (current.isNotEmpty) {
-        _fields = current;
-        for (final m in current) {
-          final key = m['fieldId']?.toString() ?? m['fieldName']?.toString() ?? '';
-          _controllers[key] = TextEditingController(text: m['value']?.toString() ?? '');
+      // Pre-populate controllers from current measurements
+      for (final m in current) {
+        final name = m['fieldName']?.toString() ?? m['name']?.toString() ?? '';
+        if (name.isNotEmpty) {
+          _controllers[name] = TextEditingController(text: m['value']?.toString() ?? '');
         }
-      } else {
-        // Use known measurement names from currentMeasurements passed in
-        if (widget.currentMeasurements.isNotEmpty) {
-          _fields = widget.currentMeasurements;
-          for (final m in widget.currentMeasurements) {
-            final key = m['fieldId']?.toString() ?? m['fieldName']?.toString() ?? '';
-            _controllers[key] = TextEditingController(text: m['value']?.toString() ?? '');
-          }
-        } else {
-          _fields = _defaultFields;
-          for (final f in _defaultFields) {
-            _controllers[f['id']!] = TextEditingController();
-          }
+      }
+
+      // Also populate from passed-in measurements if not already set
+      for (final m in widget.currentMeasurements) {
+        final name = m['fieldName']?.toString() ?? m['name']?.toString() ?? '';
+        if (name.isNotEmpty && !_controllers.containsKey(name)) {
+          _controllers[name] = TextEditingController(text: m['value']?.toString() ?? '');
         }
       }
     } catch (_) {
-      _fields = _defaultFields;
-      for (final f in _defaultFields) {
-        _controllers[f['id']!] = TextEditingController();
-      }
-    }
-    setState(() => _loading = false);
-  }
-
-  Future<void> _save() async {
-    final measurements = <Map<String, dynamic>>[];
-
-    for (final field in _fields) {
-      final key = field['fieldId']?.toString() ?? field['id']?.toString() ?? '';
-      final value = double.tryParse(_controllers[key]?.text ?? '');
-      if (value != null && value > 0) {
-        final fieldId = field['fieldId']?.toString() ?? field['id']?.toString();
-        if (fieldId != null) {
-          measurements.add({'fieldId': fieldId, 'value': value});
+      // If history fetch fails, populate from passed-in measurements
+      for (final m in widget.currentMeasurements) {
+        final name = m['fieldName']?.toString() ?? m['name']?.toString() ?? '';
+        if (name.isNotEmpty) {
+          _controllers[name] = TextEditingController(text: m['value']?.toString() ?? '');
         }
       }
     }
+    if (mounted) setState(() => _loadingHistory = false);
+  }
+
+  Future<void> _save() async {
+    final measurements = _measurementFieldsKey.currentState?.getFilledMeasurements() ?? [];
 
     if (measurements.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -138,7 +110,7 @@ class _MeasurementsScreenState extends ConsumerState<MeasurementsScreen> {
         title: Text('Mesures', style: GoogleFonts.notoSerif(fontSize: 20, fontWeight: FontWeight.w600)),
         leading: const BackButton(),
       ),
-      body: _loading
+      body: _loadingHistory
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : Column(children: [
               // Client header
@@ -159,53 +131,27 @@ class _MeasurementsScreenState extends ConsumerState<MeasurementsScreen> {
                     Text(widget.clientName, style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600)),
                     Text('Saisie des mensurations', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
                   ])),
-                  Icon(Icons.straighten, color: AppColors.secondary),
+                  const Icon(Icons.straighten, color: AppColors.secondary),
                 ]),
               ),
               const SizedBox(height: 8),
 
-              // Measurement fields
+              // Measurement fields (dynamic, from API)
               Expanded(
-                child: ListView.builder(
+                child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                  itemCount: _fields.length,
-                  itemBuilder: (_, i) {
-                    final field = _fields[i];
-                    final name = field['fieldName']?.toString() ?? field['name']?.toString() ?? 'Mesure ${i + 1}';
-                    final unit = field['unit']?.toString() ?? 'cm';
-                    final key = field['fieldId']?.toString() ?? field['id']?.toString() ?? '$i';
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(children: [
-                        Expanded(
-                          flex: 3,
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(name, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w500)),
-                          ]),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: TextField(
-                            controller: _controllers[key],
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600),
-                            decoration: InputDecoration(
-                              suffixText: unit,
-                              suffixStyle: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            ),
-                          ),
-                        ),
-                      ]),
-                    );
-                  },
+                  children: [
+                    MeasurementFieldsWidget(
+                      key: _measurementFieldsKey,
+                      api: ref.read(apiClientProvider),
+                      controllers: _controllers,
+                      showAddRemove: true,
+                    ),
+                  ],
                 ),
               ),
             ]),
-      bottomSheet: !_loading
+      bottomSheet: !_loadingHistory
           ? Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               decoration: BoxDecoration(

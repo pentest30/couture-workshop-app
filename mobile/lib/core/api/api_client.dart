@@ -9,7 +9,7 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  static const baseUrl = 'http://192.168.100.80:5000'; // LAN IP for physical device
+  static const baseUrl = 'https://couture-workshop-app.onrender.com';
 
   late final Dio dio;
   String? _token;
@@ -231,5 +231,19 @@ class ApiClient {
     } catch (_) {
       return [];
     }
+  }
+
+  Future<Map<String, dynamic>> createMeasurementField(String name, String unit, int displayOrder) async {
+    final response = await dio.post('/api/measurement-fields', data: {
+      'name': name,
+      'unit': unit,
+      'displayOrder': displayOrder,
+    });
+    return _handleResponse(response) as Map<String, dynamic>;
+  }
+
+  Future<void> deleteMeasurementField(String fieldId) async {
+    final response = await dio.delete('/api/measurement-fields/$fieldId');
+    _handleResponse(response);
   }
 }

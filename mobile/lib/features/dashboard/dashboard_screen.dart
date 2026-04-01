@@ -141,6 +141,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  void _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Deconnexion', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: Text('Voulez-vous vous deconnecter ?', style: GoogleFonts.manrope(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Annuler', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text('Deconnecter', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    ref.read(apiClientProvider).clearToken();
+    ref.read(signalRServiceProvider).dispose();
+    ref.read(authStateProvider.notifier).state = null;
+    ref.read(unreadCountProvider.notifier).state = 0;
+    context.go('/login');
+  }
+
   Widget _buildHeader(String name) {
     return Row(children: [
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -148,7 +176,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         const SizedBox(height: 4),
         Text('Bonjour, ${name.split(' ').first}', style: GoogleFonts.notoSerif(fontSize: 22, fontWeight: FontWeight.w600)),
       ])),
-      CircleAvatar(backgroundColor: AppColors.primaryContainer, radius: 22, child: Text(name.isNotEmpty ? name[0] : '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18))),
+      GestureDetector(
+        onTap: _logout,
+        child: CircleAvatar(backgroundColor: AppColors.primaryContainer, radius: 22, child: Text(name.isNotEmpty ? name[0] : '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18))),
+      ),
     ]);
   }
 

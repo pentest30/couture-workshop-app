@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/providers.dart';
+import '../../core/widgets/measurement_fields_widget.dart';
 
 class NewOrderScreen extends ConsumerStatefulWidget {
   const NewOrderScreen({super.key});
@@ -33,11 +34,22 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
   List<dynamic> _catalogModels = [];
   bool _loadingCatalog = false;
 
-  // New client form removed — use /clients/new instead
-
   // Embroidery / beading fields
   final _embroideryDescController = TextEditingController();
   final _beadingDescController = TextEditingController();
+
+  // Inline client creation
+  bool _createMode = false;
+  final _newFirstNameCtrl = TextEditingController();
+  final _newLastNameCtrl = TextEditingController();
+  final _newPhoneCtrl = TextEditingController();
+  final _newPhone2Ctrl = TextEditingController();
+  final _newAddressCtrl = TextEditingController();
+  final _newNotesCtrl = TextEditingController();
+  final _newMeasurementCtrls = <String, TextEditingController>{};
+  final _measurementFieldsKey = GlobalKey<MeasurementFieldsWidgetState>();
+  bool _creatingClient = false;
+  String? _createError;
 
   @override
   void dispose() {
@@ -49,6 +61,15 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
     _depositController.dispose();
     _embroideryDescController.dispose();
     _beadingDescController.dispose();
+    _newFirstNameCtrl.dispose();
+    _newLastNameCtrl.dispose();
+    _newPhoneCtrl.dispose();
+    _newPhone2Ctrl.dispose();
+    _newAddressCtrl.dispose();
+    _newNotesCtrl.dispose();
+    for (final c in _newMeasurementCtrls.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -165,6 +186,69 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
     }
   }
 
+  Future<void> _createClientInline() async {
+    if (_newFirstNameCtrl.text.trim().isEmpty || _newLastNameCtrl.text.trim().isEmpty) {
+      setState(() => _createError = 'Prenom et nom sont obligatoires');
+      return;
+    }
+    if (_newPhoneCtrl.text.trim().isEmpty) {
+      setState(() => _createError = 'Telephone est obligatoire');
+      return;
+    }
+    if (!RegExp(r'^0[567]\d{8}$').hasMatch(_newPhoneCtrl.text.trim())) {
+      setState(() => _createError = 'Format telephone invalide (ex: 0550123456)');
+      return;
+    }
+
+    setState(() { _creatingClient = true; _createError = null; });
+    try {
+      final api = ref.read(apiClientProvider);
+      final clientData = <String, dynamic>{
+        'firstName': _newFirstNameCtrl.text.trim(),
+        'lastName': _newLastNameCtrl.text.trim(),
+        'primaryPhone': _newPhoneCtrl.text.trim(),
+      };
+      if (_newPhone2Ctrl.text.trim().isNotEmpty) clientData['secondaryPhone'] = _newPhone2Ctrl.text.trim();
+      if (_newAddressCtrl.text.trim().isNotEmpty) clientData['address'] = _newAddressCtrl.text.trim();
+      if (_newNotesCtrl.text.trim().isNotEmpty) clientData['notes'] = _newNotesCtrl.text.trim();
+
+      final result = await api.createClient(clientData);
+      final clientId = result['id']?.toString();
+
+      // Save measurements if any filled
+      if (clientId != null) {
+        final measurements = _measurementFieldsKey.currentState?.getFilledMeasurements() ?? [];
+        if (measurements.isNotEmpty) {
+          try {
+            await api.recordMeasurements(clientId, measurements);
+          } catch (_) {}
+        }
+      }
+
+      // Auto-select and advance to step 2
+      setState(() {
+        _selectedClient = {
+          'id': result['id'],
+          'code': result['code'],
+          'firstName': _newFirstNameCtrl.text.trim(),
+          'lastName': _newLastNameCtrl.text.trim(),
+          'primaryPhone': _newPhoneCtrl.text.trim(),
+        };
+        _createMode = false;
+        _step = 1;
+        _stepError = null;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Client ${result['code']} cree'), backgroundColor: AppColors.statusPrete),
+        );
+      }
+    } catch (e) {
+      setState(() => _createError = e.toString());
+    }
+    if (mounted) setState(() => _creatingClient = false);
+  }
 
   bool _validateStep() {
     setState(() => _stepError = null);
@@ -248,6 +332,8 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hideNextButton = _createMode && _step == 0;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -325,55 +411,36 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
               },
             ),
           ),
-          // Navigation buttons
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            child: Row(children: [
-              if (_step > 0) Expanded(child: OutlinedButton(
-                onPressed: _loading ? null : () => setState(() { _step--; _stepError = null; }),
-                style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary, side: const BorderSide(color: AppColors.outlineVariant), shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 14)),
-                child: Text('PRECEDENT', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
-              )),
-              if (_step > 0) const SizedBox(width: 12),
-              Expanded(child: ElevatedButton(
-                onPressed: _loading ? null : _onNext,
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 14)),
-                child: _loading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text(_step < 2 ? 'SUIVANT' : 'CREER', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
-              )),
-            ]),
-          ),
+          // Navigation buttons (hidden when in create mode on step 0)
+          if (!hideNextButton)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: Row(children: [
+                if (_step > 0) Expanded(child: OutlinedButton(
+                  onPressed: _loading ? null : () => setState(() { _step--; _stepError = null; }),
+                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary, side: const BorderSide(color: AppColors.outlineVariant), shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 14)),
+                  child: Text('PRECEDENT', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+                )),
+                if (_step > 0) const SizedBox(width: 12),
+                Expanded(child: ElevatedButton(
+                  onPressed: _loading ? null : _onNext,
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 14)),
+                  child: _loading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text(_step < 2 ? 'SUIVANT' : 'CREER', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
+                )),
+              ]),
+            ),
         ]),
       ),
     );
   }
 
   Widget _buildClientStep() {
-    return ListView(children: [
-      const SizedBox(height: 4),
-      Text('Selectionner le client', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 12),
-      TextField(
-        controller: _searchController,
-        onChanged: _onSearchChanged,
-        decoration: InputDecoration(
-          hintText: 'Rechercher par nom ou telephone...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searching ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))) : null,
-          hintStyle: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurfaceVariant),
-        ),
-      ),
-      const SizedBox(height: 16),
-      // Search results
-      if (_searchResults.isNotEmpty) ...[
-        Text('RESULTATS', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        ..._searchResults.map((c) => _clientTile(c, selectable: true)),
-      ],
-      // Selected client display
-      if (_selectedClient != null && _searchResults.isEmpty) ...[
-        const SizedBox(height: 8),
+    // If a client is already selected, show it
+    if (_selectedClient != null && !_createMode) {
+      return ListView(children: [
+        const SizedBox(height: 4),
         Text('CLIENT SELECTIONNE', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         _clientTile(_selectedClient!, selected: true),
@@ -387,7 +454,164 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
             style: TextButton.styleFrom(foregroundColor: AppColors.onSurfaceVariant),
           ),
         ),
+      ]);
+    }
+
+    return ListView(children: [
+      const SizedBox(height: 4),
+      // Mode toggle: search / create
+      Row(children: [
+        Expanded(child: GestureDetector(
+          onTap: () => setState(() => _createMode = false),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: !_createMode ? AppColors.primary.withOpacity(0.08) : AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: !_createMode ? Border.all(color: AppColors.primary) : Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.search, size: 18, color: !_createMode ? AppColors.primary : AppColors.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Text('Client existant', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: !_createMode ? AppColors.primary : AppColors.onSurfaceVariant)),
+            ]),
+          ),
+        )),
+        const SizedBox(width: 10),
+        Expanded(child: GestureDetector(
+          onTap: () => setState(() => _createMode = true),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: _createMode ? AppColors.primary.withOpacity(0.08) : AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: _createMode ? Border.all(color: AppColors.primary) : Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.person_add, size: 18, color: _createMode ? AppColors.primary : AppColors.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Text('Nouveau client', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: _createMode ? AppColors.primary : AppColors.onSurfaceVariant)),
+            ]),
+          ),
+        )),
+      ]),
+      const SizedBox(height: 16),
+
+      if (!_createMode) ...[
+        // Search mode
+        TextField(
+          controller: _searchController,
+          onChanged: _onSearchChanged,
+          decoration: InputDecoration(
+            hintText: 'Rechercher par nom ou telephone...',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _searching ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))) : null,
+            hintStyle: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurfaceVariant),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_searchResults.isNotEmpty) ...[
+          Text('RESULTATS', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          ..._searchResults.map((c) => _clientTile(c, selectable: true)),
+        ],
+        // No results hint
+        if (_searchController.text.length >= 2 && _searchResults.isEmpty && !_searching) ...[
+          const SizedBox(height: 24),
+          Center(child: Column(children: [
+            Icon(Icons.search_off, size: 40, color: AppColors.onSurfaceVariant.withOpacity(0.4)),
+            const SizedBox(height: 8),
+            Text('Aucun resultat', style: GoogleFonts.manrope(fontSize: 14, color: AppColors.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () => setState(() => _createMode = true),
+              child: Text('Creer un nouveau client', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+            ),
+          ])),
+        ],
+      ] else ...[
+        // Create mode: inline client form
+        _buildInlineClientForm(),
       ],
+    ]);
+  }
+
+  Widget _buildInlineClientForm() {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('INFORMATIONS', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+      const SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: TextField(controller: _newFirstNameCtrl, decoration: InputDecoration(labelText: 'Prenom *', labelStyle: GoogleFonts.manrope(fontSize: 13)))),
+        const SizedBox(width: 12),
+        Expanded(child: TextField(controller: _newLastNameCtrl, decoration: InputDecoration(labelText: 'Nom *', labelStyle: GoogleFonts.manrope(fontSize: 13)))),
+      ]),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _newPhoneCtrl,
+        keyboardType: TextInputType.phone,
+        decoration: InputDecoration(labelText: 'Telephone *', hintText: '0550123456', prefixIcon: const Icon(Icons.phone_outlined, size: 20), labelStyle: GoogleFonts.manrope(fontSize: 13)),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _newPhone2Ctrl,
+        keyboardType: TextInputType.phone,
+        decoration: InputDecoration(labelText: 'Tel. secondaire', prefixIcon: const Icon(Icons.phone_outlined, size: 20), labelStyle: GoogleFonts.manrope(fontSize: 13)),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _newAddressCtrl,
+        decoration: InputDecoration(labelText: 'Adresse', prefixIcon: const Icon(Icons.location_on_outlined, size: 20), labelStyle: GoogleFonts.manrope(fontSize: 13)),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _newNotesCtrl,
+        maxLines: 2,
+        decoration: InputDecoration(labelText: 'Notes', labelStyle: GoogleFonts.manrope(fontSize: 13)),
+      ),
+      const SizedBox(height: 20),
+
+      // Measurements section
+      Row(children: [
+        const Icon(Icons.straighten, color: AppColors.secondary, size: 20),
+        const SizedBox(width: 8),
+        Text('MENSURATIONS', style: GoogleFonts.manrope(fontSize: 10, letterSpacing: 1.5, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+      ]),
+      const SizedBox(height: 4),
+      Text('Optionnel — vous pouvez les ajouter plus tard', style: GoogleFonts.manrope(fontSize: 12, color: AppColors.onSurfaceVariant)),
+      const SizedBox(height: 12),
+      MeasurementFieldsWidget(
+        key: _measurementFieldsKey,
+        api: ref.read(apiClientProvider),
+        controllers: _newMeasurementCtrls,
+        showAddRemove: true,
+      ),
+
+      // Error message
+      if (_createError != null) ...[
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: AppColors.error.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+          child: Row(children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 18),
+            const SizedBox(width: 8),
+            Expanded(child: Text(_createError!, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.error, fontWeight: FontWeight.w500))),
+          ]),
+        ),
+      ],
+
+      const SizedBox(height: 16),
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _creatingClient ? null : _createClientInline,
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 14)),
+          child: _creatingClient
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : Text('CREER ET CONTINUER', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
+        ),
+      ),
+      const SizedBox(height: 16),
     ]);
   }
 

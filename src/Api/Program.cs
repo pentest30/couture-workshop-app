@@ -90,11 +90,11 @@ app.MapScalarApiReference(options =>
     options.WithTitle("Couture Workshop API");
 });
 
+// CORS must be before static files so images get Access-Control headers
+app.UseCors();
+
 // Static files for uploads
 app.UseStaticFiles();
-
-// Middleware
-app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
