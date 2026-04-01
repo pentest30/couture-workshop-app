@@ -61,10 +61,12 @@ jobs:
       - name: Create unsigned IPA
         run: |
           mkdir -p build/ios/ipa
-          cd ios/build/Runner.xcarchive/Products/Applications
+          APP_PATH=$(find ios/build/Runner.xcarchive -name "Runner.app" -type d | head -1)
+          echo "Found app at: $APP_PATH"
           mkdir Payload
-          cp -r Runner.app Payload/
-          zip -r ../../../../../build/ios/ipa/app-unsigned.ipa Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r build/ios/ipa/app-unsigned.ipa Payload
+          rm -rf Payload
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
