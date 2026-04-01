@@ -43,6 +43,45 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
     }
   }
 
+  Future<void> _deleteClient() async {
+    final name = _client != null ? '${_client!['firstName']} ${_client!['lastName']}' : '';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Supprimer le client', style: GoogleFonts.notoSerif(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: Text('Supprimer $name ?', style: GoogleFonts.manrope(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Annuler', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text('Supprimer', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref.read(apiClientProvider).deleteClient(widget.clientId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Client supprime'), backgroundColor: AppColors.statusPrete),
+        );
+        context.go('/clients');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -80,6 +119,13 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
         leading: const BackButton(),
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
+        actions: [
+          IconButton(
+            onPressed: _deleteClient,
+            icon: const Icon(Icons.delete_outline, color: AppColors.error),
+            tooltip: 'Supprimer le client',
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _load,

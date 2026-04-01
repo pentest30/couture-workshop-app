@@ -146,6 +146,11 @@ class ApiClient {
     return _handleResponse(response) as Map<String, dynamic>;
   }
 
+  Future<void> deleteClient(String clientId) async {
+    final response = await dio.delete('/api/clients/$clientId');
+    _handleResponse(response);
+  }
+
   // Dashboard
   Future<Map<String, dynamic>> getKPIs(int year, int quarter) async {
     final response = await dio.get('/api/dashboard/kpis', queryParameters: {'year': year, 'quarter': quarter});

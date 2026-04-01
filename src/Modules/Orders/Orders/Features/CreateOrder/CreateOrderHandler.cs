@@ -1,6 +1,7 @@
 using Couture.Orders.Domain;
 using Couture.Orders.Persistence;
 using Mediator;
+using Microsoft.EntityFrameworkCore;
 
 namespace Couture.Orders.Features.CreateOrder;
 
@@ -17,9 +18,9 @@ public sealed class CreateOrderHandler : ICommandHandler<CreateOrderCommand, Cre
     {
         var workType = WorkType.FromName(command.WorkType, ignoreCase: true);
 
-        // Generate sequential code
+        // Generate sequential code — include soft-deleted orders to avoid duplicate codes
         var year = DateTime.UtcNow.Year;
-        var count = _db.Orders.Count(o => o.ReceptionDate.Year == year) + 1;
+        var count = _db.Orders.IgnoreQueryFilters().Count(o => o.ReceptionDate.Year == year) + 1;
         var code = $"CMD-{year}-{count:D4}";
 
         var order = Order.Create(
