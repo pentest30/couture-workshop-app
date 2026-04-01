@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'mobile/**'
+      - '.github/workflows/build-ios.yml'
 
 jobs:
   build-ios:
@@ -25,13 +26,21 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Prepare iOS build
+      - name: Patch Xcode project to disable signing
         run: |
-          flutter precache --ios
           cd ios
-          pod install
+          # Remove code sign identity requirements
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "iPhone Developer"/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = ""/g' Runner.xcodeproj/project.pbxproj
+          # Add signing overrides to Release xcconfig
+          echo 'CODE_SIGNING_REQUIRED=NO' >> Flutter/Release.xcconfig
+          echo 'CODE_SIGNING_ALLOWED=NO' >> Flutter/Release.xcconfig
+          echo 'CODE_SIGN_IDENTITY=' >> Flutter/Release.xcconfig
+          echo 'EXPANDED_CODE_SIGN_IDENTITY=' >> Flutter/Release.xcconfig
 
-      - name: Build iOS via xcodebuild (unsigned)
+      - name: Generate iOS build files
+        run: flutter build ios --release --no-codesign --config-only
+
+      - name: Build with xcodebuild
         run: |
           cd ios
           xcodebuild \
@@ -46,7 +55,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             DEVELOPMENT_TEAM="" \
-            COMPILER_INDEX_STORE_ENABLE=NO
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            | tail -20
 
       - name: Create unsigned IPA
         run: |
@@ -54,7 +64,7 @@ jobs:
           cd ios/build/Runner.xcarchive/Products/Applications
           mkdir Payload
           cp -r Runner.app Payload/
-          zip -r ../../../../build/ios/ipa/app-unsigned.ipa Payload
+          zip -r ../../../../../build/ios/ipa/app-unsigned.ipa Payload
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
