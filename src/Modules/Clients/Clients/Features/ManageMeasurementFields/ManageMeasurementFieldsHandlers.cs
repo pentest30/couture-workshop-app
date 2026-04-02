@@ -10,6 +10,12 @@ public sealed class CreateMeasurementFieldHandler : ICommandHandler<CreateMeasur
     public CreateMeasurementFieldHandler(ClientsDbContext db) => _db = db;
     public async ValueTask<Guid> Handle(CreateMeasurementFieldCommand cmd, CancellationToken ct)
     {
+        var existing = await _db.MeasurementFields
+            .FirstOrDefaultAsync(f => f.Name == cmd.Name, ct);
+
+        if (existing is not null)
+            throw new InvalidOperationException($"A measurement field named '{cmd.Name}' already exists.");
+
         var field = MeasurementField.Create(cmd.Name, cmd.Unit, cmd.DisplayOrder);
         _db.MeasurementFields.Add(field);
         await _db.SaveChangesAsync(ct);

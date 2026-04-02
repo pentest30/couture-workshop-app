@@ -79,8 +79,11 @@ public static class ClientEndpoints
     private static async Task<IResult> RecordMeasurements(Guid id, [FromBody] RecordMeasurementsRequest req, IMediator mediator, ICurrentUser user, ClientsDbContext clientsDb)
     {
         // Resolve field names to IDs (frontend sends fieldName, not fieldId)
-        var fieldMap = await clientsDb.MeasurementFields.AsNoTracking()
-            .ToDictionaryAsync(f => f.Name, f => f.Id.Value);
+        var fieldMap = (await clientsDb.MeasurementFields.AsNoTracking()
+            .Where(f => f.IsActive)
+            .ToListAsync())
+            .GroupBy(f => f.Name)
+            .ToDictionary(g => g.Key, g => g.First().Id.Value);
 
         var entries = new List<MeasurementEntry>();
         foreach (var m in req.Measurements)

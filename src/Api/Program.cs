@@ -193,33 +193,10 @@ app.Run();
 
 static async Task SeedSampleDataAsync(IServiceProvider services, Microsoft.Extensions.Logging.ILogger logger)
 {
-    // Seed measurement fields
-    var clientsDb = services.GetRequiredService<ClientsDbContext>();
-    if (!await clientsDb.MeasurementFields.AnyAsync())
-    {
-        var fields = new[]
-        {
-            ("Tour de poitrine", "cm", 1),
-            ("Tour de taille", "cm", 2),
-            ("Tour de hanches", "cm", 3),
-            ("Longueur robe (dos)", "cm", 4),
-            ("Longueur jupe", "cm", 5),
-            ("Longueur manche", "cm", 6),
-            ("Tour de bras", "cm", 7),
-            ("Épaule", "cm", 8),
-            ("Carrure dos", "cm", 9),
-            ("Hauteur totale", "cm", 10),
-        };
-        foreach (var (name, unit, order) in fields)
-        {
-            clientsDb.MeasurementFields.Add(
-                Couture.Clients.Domain.MeasurementField.Create(name, unit, order, isDefault: true));
-        }
-        await clientsDb.SaveChangesAsync();
-        logger.LogInformation("Seeded {Count} measurement fields", fields.Length);
-    }
+    // Measurement fields already seeded in all-environments block above
 
     // Seed sample clients
+    var clientsDb = services.GetRequiredService<ClientsDbContext>();
     if (!await clientsDb.Clients.AnyAsync())
     {
         var clients = new[]
